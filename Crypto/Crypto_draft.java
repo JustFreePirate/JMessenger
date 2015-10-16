@@ -1,62 +1,148 @@
 package ru.JMessenger.crypto;
 import java.math.BigInteger;
+import java.util.Random;
 
 /**
  * @author Сергей
  */
-public class Crypto_draft {
-    final BigInteger a;
-    final BigInteger p;
-    final BigInteger x;
+public class Authentication {
+    private final BigInteger a;
+    private final BigInteger p;
+    private final BigInteger x;
+    private final BigInteger y;
 
-    Crypto_draft(BigInteger[] init){
+    private BigInteger c;
+    private BigInteger r;
+    private BigInteger y2;
+    private boolean expectedAnswer;
+
+    Authentication(final BigInteger[] init) {
         a = init[0];
         p = init[1];
         x = init[2];
+        y = powAXmodP(a, x, p);
+    }
+
+    final public BigInteger returnY() {
+        return y;
+    }
+    final public void getY(final BigInteger answer) {
+        y2 = answer;
+    }
+
+    final public BigInteger returnC() {
+        generateNewR();
+        return powAXmodP(a, r, p);
+    }
+    final public void getC(final BigInteger answer) {
+        c = answer;
+    }
+
+    private void generateNewR() {
+        int numBits = 64;
+        Random rand = new Random();
+        r = (new BigInteger(numBits, rand)).mod(p);
+    }
+
+    /**
+     * false =>  r;
+     * true => (x+r) mod (p-1);
+     */
+    final public boolean sendRequest() {
+        expectedAnswer  = Math.random() < 0.5;
+        System.out.print("Victor conceived " + expectedAnswer + " ");
+        return expectedAnswer;
+    }
+
+    /**
+     * if (bool == false) => return r;
+     * if (bool == true) => return (x + r) mod (p - 1);
+     */
+    private BigInteger answerRequest(final boolean request) {
+        if (!request) {
+            return r;
+        } else {
+            return r.add(x).mod(p.subtract(BigInteger.ONE));
+        }
+    }
+
+    public boolean checkAnsver(final BigInteger answer) {
+        if (!expectedAnswer) {
+            return equals(powAXmodP(a, answer, p), c);
+        } else {
+            return equals(powAXmodP(a, answer, p), y2.multiply(c).mod(p));
+        }
     }
 
     /**
      *
-     * @return int
+     * @param a -- base
+     * @param x -- exponent
+     * @param p -- module
+     * @return a ^ x mod p
      */
-    public BigInteger getY () {
-        return powAXmodP(a,x,p);
-    }
-
-    //static, private ?
-    static private BigInteger powAXmodP (BigInteger a, BigInteger x, BigInteger p){
+    static private BigInteger powAXmodP(BigInteger a, BigInteger x, BigInteger p) {
         BigInteger result = new BigInteger("1");
 
         // BigInteger.TWO ?
-        BigInteger TWO = new BigInteger("2");
-        BigInteger ZERO = new BigInteger("0");
+        BigInteger two = new BigInteger("2");
+        BigInteger zero = new BigInteger("0");
 
-        while (x.compareTo(ZERO) != 0)  {
-            if(x.mod(TWO).compareTo(ZERO) == 1){
+        while (x.compareTo(zero) != 0)  {
+            if (x.mod(two).compareTo(zero) == 1) {
                 result = result.multiply(a).mod(p);
             }
             a = a.multiply(a).mod(p);
-            x = x.divide(TWO).mod(p);
+            x = x.divide(two).mod(p);
         }
 
         return result;
     }
 
+    /**
+     *
+     * @param x
+     * @param y
+     * @return boolean
+     */
+    private static boolean equals(final BigInteger x, final BigInteger y) {
+        return x.compareTo(y) == 0;
+    }
 
-    public static void main(String[] args) {
-        BigInteger pow_2_64 = new BigInteger("18446744073709551616");
+    /**
+     *
+     * @param args
+     */
+    public static void main(final String[] args) {
+        BigInteger pow2in64 = new BigInteger("18446744073709551616");
 
-        BigInteger[] array1 =
-                {new BigInteger("21"), new BigInteger("19"), new BigInteger("13")};
-
-        BigInteger[] array2 =
+        BigInteger[] arrayPeggy =
                 {new BigInteger("654124187867"), new BigInteger("654124187881"), new BigInteger("654124188353")};
+        BigInteger[] arrayVictor =
+                {new BigInteger("654124187867"), new BigInteger("654124187881"), new BigInteger("384490349669")};
 
-        Crypto_draft test = new Crypto_draft(array2);
+        Authentication Peggy  = new Authentication(arrayPeggy);
+        Authentication Victor  = new Authentication(arrayVictor);
 
 
-        System.out.println(test.getY());
-        System.out.println(test.getY());
+        //Виктор и Пегги обмениваются ключами
+        Peggy.getY(Victor.returnY());
+        Victor.getY(Peggy.returnY());
+
+        for (int i = 0; i < 20; ++i) {
+            //Виктор получает от Пегги С
+            Victor.getC(Peggy.returnC());
+
+            //Виктор выбирает из {false,true} и посылает Пегги
+            //Пегги принимает запрос и в зависимости от этого отвечает
+            //r или (x+r)mod(p-1)
+            //Виктор проверяет
+            if (Victor.checkAnsver(Peggy.answerRequest(Victor.sendRequest()))) {
+                System.out.println("Correct");
+            } else {
+                throw new RuntimeException("Peggy gave the wrong answer!");
+            }
+        }
 
     }
 }
