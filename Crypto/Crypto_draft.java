@@ -88,8 +88,8 @@ public class Authentication {
         BigInteger two = new BigInteger("2");
         BigInteger zero = new BigInteger("0");
 
-        while (x.compareTo(zero) != 0)  {
-            if (x.mod(two).compareTo(zero) == 1) {
+        while (!equals(x,zero))  {
+            if (!equals(x.mod(two), zero)) {
                 result = result.multiply(a).mod(p);
             }
             a = a.multiply(a).mod(p);
