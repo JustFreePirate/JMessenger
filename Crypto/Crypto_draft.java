@@ -1,4 +1,4 @@
-package ru.JMessenger.crypto;
+package ru.jMessenger.crypto;
 import java.math.BigInteger;
 import java.util.Random;
 
