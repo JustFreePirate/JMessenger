@@ -117,9 +117,9 @@ public class Authentication {
         BigInteger pow2in64 = new BigInteger("18446744073709551616");
 
         BigInteger[] arrayPeggy =
-                {new BigInteger("654124187867"), new BigInteger("654124187881"), new BigInteger("654124188353")};
+                {new BigInteger("11111111111111111111111"), new BigInteger("19175002942688032928599"), new BigInteger("18014398241046527")};
         BigInteger[] arrayVictor =
-                {new BigInteger("654124187867"), new BigInteger("654124187881"), new BigInteger("384490349669")};
+                {new BigInteger("11111111111111111111111"), new BigInteger("19175002942688032928599"), new BigInteger("1125899839733759")};
 
         Authentication Peggy  = new Authentication(arrayPeggy);
         Authentication Victor  = new Authentication(arrayVictor);
