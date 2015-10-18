@@ -73,7 +73,7 @@ class SampleServer extends Thread
             os.write(data.getBytes());
 
             // завершаем соединение
-            //s.close();
+            s.close();
         }
         catch(Exception e)
         {System.out.println("init error: "+e);} // вывод исключений
