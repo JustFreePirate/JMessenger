@@ -1,54 +1,56 @@
-package ru.jMessenger.crypto;
+package ru.jmessenger.crypto;
 import java.math.BigInteger;
 import java.util.Random;
 
 /**
  * @author Сергей
  */
-public class Authentication {
-    private final BigInteger a;
-    private final BigInteger p;
-    private final BigInteger x;
-    private final BigInteger y;
+public final class ManagerAuthentication implements InterfaceManagerAuthentication {
+    private final BigInteger publicBase;
+    private final BigInteger publicModulo;
+    private final BigInteger ownSecretKey;
+    private final BigInteger ownPublicKey;
 
     private BigInteger c;
     private BigInteger r;
-    private BigInteger y2;
+    private BigInteger foreignPublicKey;
     private boolean expectedAnswer;
 
-    Authentication(final BigInteger[] init) {
-        a = init[0];
-        p = init[1];
-        x = init[2];
-        y = powAXmodP(a, x, p);
+    ManagerAuthentication(final BigInteger[] args) {
+        publicBase = args[0];
+        publicModulo = args[1];
+        ownSecretKey = args[2];
+
+        ownPublicKey =
+                InterfaceManagerAuthentication.fastModularExponentiation(publicBase, ownSecretKey, publicModulo);
     }
 
-    final public BigInteger returnY() {
-        return y;
+    public BigInteger returnOwnPublicKey() {
+        return ownPublicKey;
     }
-    final public void getY(final BigInteger answer) {
-        y2 = answer;
+    public void getForeignPublicKey(final BigInteger answer) {
+        foreignPublicKey = answer;
     }
 
-    final public BigInteger returnC() {
+    public BigInteger returnC() {
         generateNewR();
-        return powAXmodP(a, r, p);
+        return InterfaceManagerAuthentication.fastModularExponentiation(publicBase, r, publicModulo);
     }
-    final public void getC(final BigInteger answer) {
+    public void getC(final BigInteger answer) {
         c = answer;
     }
 
     private void generateNewR() {
-        int numBits = 64;
+        final int numBits = 64;
         Random rand = new Random();
-        r = (new BigInteger(numBits, rand)).mod(p);
+        r = (new BigInteger(numBits, rand)).mod(publicModulo);
     }
 
     /**
      * false =>  r;
      * true => (x+r) mod (p-1);
      */
-    final public boolean sendRequest() {
+    public boolean sendRequest() {
         expectedAnswer  = Math.random() < 0.5;
         System.out.print("Victor conceived " + expectedAnswer + " ");
         return expectedAnswer;
@@ -58,90 +60,55 @@ public class Authentication {
      * if (bool == false) => return r;
      * if (bool == true) => return (x + r) mod (p - 1);
      */
-    private BigInteger answerRequest(final boolean request) {
+    public BigInteger answerRequest(final boolean request) {
         if (!request) {
             return r;
         } else {
-            return r.add(x).mod(p.subtract(BigInteger.ONE));
+            return r.add(ownSecretKey).mod(publicModulo.subtract(BigInteger.ONE));
         }
     }
 
-    public boolean checkAnsver(final BigInteger answer) {
+    public boolean checkAnswer(final BigInteger answer) {
         if (!expectedAnswer) {
-            return equals(powAXmodP(a, answer, p), c);
+            return InterfaceManagerAuthentication.equals(
+                    InterfaceManagerAuthentication.fastModularExponentiation(publicBase, answer, publicModulo),
+                    c
+            );
         } else {
-            return equals(powAXmodP(a, answer, p), y2.multiply(c).mod(p));
+            return InterfaceManagerAuthentication.equals(
+                    InterfaceManagerAuthentication.fastModularExponentiation(publicBase, answer, publicModulo),
+                    foreignPublicKey.multiply(c).mod(publicModulo)
+            );
         }
     }
 
-    /**
-     *
-     * @param a -- base
-     * @param x -- exponent
-     * @param p -- module
-     * @return a ^ x mod p
-     */
-    static private BigInteger powAXmodP(BigInteger a, BigInteger x, BigInteger p) {
-        BigInteger result = new BigInteger("1");
-
-        // BigInteger.TWO ?
-        BigInteger two = new BigInteger("2");
-        BigInteger zero = new BigInteger("0");
-
-        while (!equals(x,zero))  {
-            if (!equals(x.mod(two), zero)) {
-                result = result.multiply(a).mod(p);
-            }
-            a = a.multiply(a).mod(p);
-            x = x.divide(two).mod(p);
-        }
-
-        return result;
-    }
-
-    /**
-     *
-     * @param x
-     * @param y
-     * @return boolean
-     */
-    private static boolean equals(final BigInteger x, final BigInteger y) {
-        return x.compareTo(y) == 0;
-    }
-
-    /**
-     *
-     * @param args
-     */
     public static void main(final String[] args) {
-        BigInteger pow2in64 = new BigInteger("18446744073709551616");
+        ManagerAuthentication autPeggy  = new ManagerAuthentication(
+                new BigInteger[]{
+                        new BigInteger("11111111111111111111111"),
+                        new BigInteger("19175002942688032928599"),
+                        new BigInteger("18014398241046527")});
 
-        BigInteger[] arrayPeggy =
-                {new BigInteger("11111111111111111111111"), 
-                        new BigInteger("19175002942688032928599"), 
-                        new BigInteger("18014398241046527")};
-        BigInteger[] arrayVictor =
-                {new BigInteger("11111111111111111111111"), 
-                        new BigInteger("19175002942688032928599"), 
-                        new BigInteger("1125899839733759")};
-                        
-        Authentication Peggy  = new Authentication(arrayPeggy);
-        Authentication Victor  = new Authentication(arrayVictor);
+        ManagerAuthentication autVictor  = new ManagerAuthentication(
+                new BigInteger[] {
+                        new BigInteger("11111111111111111111111"),
+                        new BigInteger("19175002942688032928599"),
+                        new BigInteger("1125899839733759")});
 
 
         //Виктор и Пегги обмениваются ключами
-        Peggy.getY(Victor.returnY());
-        Victor.getY(Peggy.returnY());
+        autPeggy.getForeignPublicKey(autVictor.returnOwnPublicKey());
+        autVictor.getForeignPublicKey(autPeggy.returnOwnPublicKey());
 
-        for (int i = 0; i < 20; ++i) {
+        for (int i = 0; i < 25; ++i) {
             //Виктор получает от Пегги С
-            Victor.getC(Peggy.returnC());
+            autVictor.getC(autPeggy.returnC());
 
             //Виктор выбирает из {false,true} и посылает Пегги
             //Пегги принимает запрос и в зависимости от этого отвечает
             //r или (x+r)mod(p-1)
             //Виктор проверяет
-            if (Victor.checkAnsver(Peggy.answerRequest(Victor.sendRequest()))) {
+            if (autVictor.checkAnswer(autPeggy.answerRequest(autVictor.sendRequest()))) {
                 System.out.println("Correct");
             } else {
                 throw new RuntimeException("Peggy gave the wrong answer!");
