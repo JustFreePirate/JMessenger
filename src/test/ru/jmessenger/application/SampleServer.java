@@ -16,8 +16,8 @@ class SampleServer extends Thread {
             int connectionsCounter = 0; // счётчик подключений
 
             // привинтить сокет на локалхост, порт 3128
-            ServerSocket server = new ServerSocket(3128, 0,
-                    InetAddress.getByName("localhost"));
+            //ServerSocket server = new ServerSocket(3128, 0, InetAddress.getByName("192.168.1.20"));
+            ServerSocket server = new ServerSocket(3128);
 
             System.out.println("server is started");
 
@@ -35,6 +35,8 @@ class SampleServer extends Thread {
 
     public SampleServer(int num, Socket s) {
         System.out.println("Someone connected");
+        System.out.println("IP: "+ s.getInetAddress().toString() + "\nLocalPort: " + s.getLocalPort()
+                            + "\nLocal IP: "+ s.getLocalAddress().toString());
         // копируем данные
         this.num = num;
         this.s = s;
