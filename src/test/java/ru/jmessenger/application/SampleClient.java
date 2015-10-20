@@ -6,12 +6,9 @@ package ru.jmessenger.application;
 import java.io.*;
 import java.net.*;
 
-class SampleClient extends Thread
-{
-    public static void main(String args[])
-    {
-        try
-        {
+class SampleClient extends Thread {
+    public static void main(String args[]) {
+        try {
             // открываем сокет и коннектимся к localhost:3128
             // получаем сокет сервера
             Socket s = new Socket("213.21.24.143", 5000);
@@ -28,7 +25,7 @@ class SampleClient extends Thread
             System.out.println("2");
 
             // читаем ответ
-            byte buf[] = new byte[64*1024];
+            byte buf[] = new byte[64 * 1024];
             //byte buf2[] = new byte[64*1024];
             int r = s.getInputStream().read(buf);
             System.out.println("3");
@@ -39,8 +36,8 @@ class SampleClient extends Thread
             System.out.println(data);
 //            System.out.println(data2);
 
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-        catch(Exception e)
-        {System.out.println("init error: "+e);} // вывод исключений
     }
 }
