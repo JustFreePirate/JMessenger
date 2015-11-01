@@ -8,12 +8,12 @@ import java.util.List;
  * Поведение приложения как клиента сети
  * Singleton, т.к. приложение - это один клиент.
  */
-public class Client {
+public final class Client {
     private final List<Dialog> dialogList = new LinkedList<>();
-    private final static Client ourInstance = new Client();
+    private static final Client OUR_INSTANCE = new Client();
 
     public static Client getInstance() {
-        return ourInstance;
+        return OUR_INSTANCE;
     }
 
     private Client() {
@@ -21,11 +21,11 @@ public class Client {
 
     }
 
-    public void addDialog(Dialog dialog) {
+    public void addDialog(final Dialog dialog) {
         dialogList.add(dialog);
     }
 
-    public void delDialog(Dialog dialog) {
+    public void delDialog(final Dialog dialog) {
         dialogList.remove(dialog);
     }
 

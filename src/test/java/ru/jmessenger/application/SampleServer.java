@@ -1,4 +1,4 @@
-package java.ru.jmessenger.application;
+package ru.jmessenger.application;
 
 /**
  * Created by Дмитрий on 18.10.2015.
@@ -60,7 +60,10 @@ class SampleServer extends Thread {
             int r = is.read(buf);
 
             // создаём строку, содержащую полученную от клиента информацию
-            String data = new String(buf, 0, r);
+            String data = "";
+            if (r > 0) {
+                data = new String(buf, 0, r);
+            }
 
             // добавляем данные об адресе сокета:
             data = "" + num + ": " + "\n" + data;

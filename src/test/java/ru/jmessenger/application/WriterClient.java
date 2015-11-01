@@ -7,10 +7,8 @@ import java.util.Scanner;
  * Created by Дмитрий on 19.10.2015.
  */
 public class WriterClient {
-    public static void main(String args[])
-    {
-        try
-        {
+    public static void main(String args[]) {
+        try {
             Socket s = new Socket("192.168.1.20", 3128);
             Scanner scanner = new Scanner(System.in);
             String str;
@@ -26,8 +24,8 @@ public class WriterClient {
 //
 //            // выводим ответ в консоль
 //            System.out.println(data);
-        }
-        catch(Exception e)
-        {System.out.println("init error: "+e);} // вывод исключений
+        } catch (Exception e) {
+            System.out.println("init error: " + e);
+        } // вывод исключений
     }
 }
