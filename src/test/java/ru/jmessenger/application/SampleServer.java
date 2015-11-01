@@ -1,4 +1,4 @@
-package ru.jmessenger.application;
+package java.ru.jmessenger.application;
 
 /**
  * Created by Дмитрий on 18.10.2015.
