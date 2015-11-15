@@ -38,12 +38,6 @@ import java.sql.*;
  *  При установке MySql, указать установку только сервера
  *
  *  Создаем базу данных my_db (не таблицу).
- *
- *  Теперь у нас почти всё готово.
- *  Но не будет работать эта строка.
- *      Class.forName(JDBC_DRIVER).newInstance();
- *  Идем Project Structure -> Libraries
- *      и добавляем наш mysql-connector-java-5.0.8-bin.jar
  */
 public class AutoClosableTest {
 
