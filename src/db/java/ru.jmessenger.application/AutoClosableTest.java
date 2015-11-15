@@ -15,6 +15,35 @@ import java.sql.*;
 
 /**
  * Created by Сергей on 14.11.2015.
+ *
+ * Как сделать так, чтобы работало:
+ * Скачать файл ojdbc6.jar версии 11.2.0.3 отсюда:
+ *      http://www.oracle.com/technetwork/database/enterprise-edition/jdbc-112010-090769.html
+ *
+ * На самом деле, он будет версии 11.2.0.4, но у меня ничего не заработало,
+ *      и я его просто переименовал в 11.2.0.3, и писал везде 0.3
+ *
+ * Затем, идём в репозиторий Maven
+ *      Путь по умолчанию: "C:\Users\%username%\.m2\repository"
+ * И добавляем скачанный файл в репозиторий, должно получиться так:
+ *      C:\Users\%username%\.m2\repository\oracle\ojdbc6\11.2.0.3\ojdbc6-11.2.0.3.jar
+ *
+ * Теперь большая инструкция, как установить SQL
+ *      http://www.tutorialspoint.com/jdbc/jdbc-environment-setup.htm
+ *
+ *  Касательно пункта "что скачивать", я скачивал это:
+ *      http://dev.mysql.com/downloads/windows/installer/5.7.html
+ *      http://dev.mysql.com/downloads/connector/j/5.0.html
+ *
+ *  При установке MySql, указать установку только сервера
+ *
+ *  Создаем базу данных my_db (не таблицу).
+ *
+ *  Теперь у нас почти всё готово.
+ *  Но не будет работать эта строка.
+ *      Class.forName(JDBC_DRIVER).newInstance();
+ *  Идем Project Structure -> Libraries
+ *      и добавляем наш mysql-connector-java-5.0.8-bin.jar
  */
 public class AutoClosableTest {
 
@@ -23,6 +52,7 @@ public class AutoClosableTest {
     static final String USER = "admin";
     static final String PASS = "admin";
 
+    // см. http://www.sql2o.org/
     private final Sql2o sql2o = new Sql2o(DB_URL, USER, PASS);
 
     private final Random random = new Random();
@@ -34,6 +64,7 @@ public class AutoClosableTest {
         /**
          *  Create all tables
          */
+        //Запрос на создание таблицы user-hash(pass)
         final String createUsersTable =
                         "CREATE TABLE\n" +
                         "    `users` (\n" +
@@ -43,7 +74,8 @@ public class AutoClosableTest {
                         "         PRIMARY KEY(`user_id`)\n" +
                         "    );";
 
-        //Пока что не указываю от кого -_-
+        //Создание таблицы с недоставленными сообщениями
+        //Пока что не указываю от кого
         final String createMessagesTable =
                         "CREATE TABLE\n" +
                         "    `messages` (\n" +
@@ -54,8 +86,11 @@ public class AutoClosableTest {
                         "        FOREIGN KEY (user_id) REFERENCES users(user_id)\n" +
                         "    );";
 
-        //если таблицы ещё не созданы
-//        try(Connection con = sql2o.beginTransaction()) {
+        //Если таблицы ещё не созданы, создаем.
+        //если таблицы уже есть, оно упадет
+        //попозже добавлю какой-нибудь if, или улучшу sql-запрос
+//        try(Connection con = sql2o.beginTransaction()
+//            //Выполняем запрос на создание таблицы
 //            con.createQuery(createUsersTable).executeUpdate();
 //            con.createQuery(createMessagesTable).executeUpdate();
 //            con.commit();
@@ -65,16 +100,19 @@ public class AutoClosableTest {
         /**
          *  Add some people
          */
+        //Запрос на создание записи в базе
         final String insertPerson =
                 "INSERT INTO\n" +
                 "    `users` (`login`, `hash_pass`)\n" +
                 "VALUES\n" +
                 "    (:login_param, :hash_pass_param);";
 
-
+        //Генерирую случайное имя
         String person = "person" + String.valueOf(Math.abs(random.nextInt() % 1000));
 
         try(Connection con = sql2o.beginTransaction()) {
+            //Добавление записи в таблицу
+            // person.hashCode(), вообще, это hash(login), но могло бы быть hasp(pass)
             con.createQuery(insertPerson)
                     .addParameter("login_param", person)
                     .addParameter("hash_pass_param", person.hashCode()).executeUpdate();
@@ -85,10 +123,12 @@ public class AutoClosableTest {
         /**
          *  And messages
          */
+        //Узнаем, сколько записей в таблице
         Long sizePersonTable = (Long)sql2o
                 .createQuery("SELECT count(*) sizePersonTable FROM `users`;")
                 .executeScalar();
 
+        //Тут нужен другой запрос, так как таблица с сообщениями немного другая
         final String insertMessage =
                 "INSERT INTO\n" +
                 "    `messages` (`user_id`, `date`, `message`)\n" +
@@ -96,12 +136,13 @@ public class AutoClosableTest {
                 "    (:user_id, :date_param, :message_param);";
 
 
+        //Добавляю немного случайности
         final String date = (new Date(System.currentTimeMillis())).toString();
         final Integer id1 = Math.abs(random.nextInt() %  (int) (long) sizePersonTable) + 1;
         final Integer id2 = Math.abs(random.nextInt() % (int) (long) sizePersonTable) + 1;
 
         try(Connection con = sql2o.beginTransaction()) {
-
+            //Добавляем в базу с сообщениями сообщения
             con.createQuery(insertMessage)
                     .addParameter("user_id", id1)
                     .addParameter("date_param", date)
@@ -122,8 +163,9 @@ public class AutoClosableTest {
          *  Get: Login --> Messages
          *  (naive)
          */
-
+        //ещё чуть-чуть случайности
         final Integer id3 = Math.abs(random.nextInt() % (int) (long) sizePersonTable) + 1;
+        //"Сложный" запрос на получение сообщения (одного) по логину
         final String selectSqlM =
                 "SELECT message FROM users NATURAL JOIN messages WHERE user_id=" + id3.toString() + ";";
         final String selectSqlP =
@@ -133,7 +175,9 @@ public class AutoClosableTest {
         Object mess = sql2o.createQuery(selectSqlM).executeScalar();
 
         System.out.println(pers + " <~~ \"" + mess + "\"");
-         assertThat(true, is(equalTo(true)));
+
+        //Тут проверка для @Test, но она тут всегда true
+        assertThat(true, is(equalTo(true)));
 
     }
 }
