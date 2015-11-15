@@ -7,18 +7,18 @@ import java.util.Date;
  */
 public class TemproraryClassUser {
     private final String login;
-    private final String hash_pass;
+    private final String hashPass;
 
-    TemproraryClassUser(String login, String hash_pass){
+    TemproraryClassUser(String login, String hashPass){
         this.login = login;
-        this.hash_pass = hash_pass;
+        this.hashPass = hashPass;
     }
 
     public String getLogin() {
         return login;
     }
     public String getHashPass() {
-        return hash_pass;
+        return hashPass;
     }
 
 }

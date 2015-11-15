@@ -6,28 +6,36 @@ import java.util.Date;
  * Created by Сергей on 15.11.2015.
  */
 public class TemproraryClassMessage {
-    private final Long sender_id;
-    private final Long recipient_id;
+    private final String senderLogin;
+    private final String recipientLogin;
     private final String date;
     private final String message;
 
-    TemproraryClassMessage(Long s_id, Long r_id, String date, String message){
-        this.sender_id = s_id;
-        this.recipient_id = r_id;
+    TemproraryClassMessage(String senderLogin, String recipientLogin, String date, String message){
+        this.senderLogin = senderLogin;
+        this.recipientLogin = recipientLogin;
         this.date = date;
         this.message = message;
     }
 
-    public Long getSenderId() {
-        return sender_id;
+    public String getSenderLogin() {
+        return senderLogin;
     }
-    public Long getRecipientId() {
-        return recipient_id;
+    public String getRecipientLogin() {
+        return recipientLogin;
     }
-    public String getDueDate() {
+    public String getDate() {
         return date;
     }
     public String getMessage() {
         return message;
+    }
+
+    @Override
+    public String toString() {
+        return "from: " + senderLogin + "\n" +
+                "to: " + recipientLogin + "\n"
+                + message + "\n"
+                + "date: " + date + "\n";
     }
 }

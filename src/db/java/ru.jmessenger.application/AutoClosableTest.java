@@ -13,6 +13,11 @@ import static org.hamcrest.MatcherAssert.*;
 
 import java.sql.*;
 
+
+/**
+ *  Файл неактуален
+ */
+
 /**
  * Created by Сергей on 14.11.2015.
  *
