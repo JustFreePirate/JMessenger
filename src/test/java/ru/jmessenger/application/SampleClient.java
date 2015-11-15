@@ -15,13 +15,12 @@ class SampleClient extends Thread
             // открываем сокет и коннектимся к localhost:3128
             // получаем сокет сервера
             //Socket s = new Socket("92.42.31.144", 3128);
-            Socket s = new Socket("192.168.1.20", 3128);
+            Socket s = new Socket("localhost", 3128);
 
             // берём поток вывода и выводим туда первый аргумент
             // заданный при вызове, адрес открытого сокета и его порт
-            args[0] = args[0]+"\n"+s.getInetAddress().getHostAddress()
-                    +":"+s.getLocalPort();
-            s.getOutputStream().write(args[0].getBytes());
+
+            s.getOutputStream().write("Hello".getBytes());
 
             // читаем ответ
             byte buf[] = new byte[64*1024];
@@ -30,6 +29,8 @@ class SampleClient extends Thread
 
             // выводим ответ в консоль
             System.out.println(data);
+            //s.shutdownOutput();
+            //s.close();
         }
         catch(Exception e)
         {System.out.println("init error: "+e);} // вывод исключений

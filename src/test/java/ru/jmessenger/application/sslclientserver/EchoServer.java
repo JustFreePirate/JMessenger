@@ -63,7 +63,7 @@ class EchoServer {
     }
 
     private static void printServerSocketInfo(SSLServerSocket s) {
-        System.out.println("Server socket class: "+s.getClass());
+        System.out.println("ConnectionManager socket class: "+s.getClass());
         System.out.println("   Socker address = "
                 +s.getInetAddress().toString());
         System.out.println("   Socker port = "
