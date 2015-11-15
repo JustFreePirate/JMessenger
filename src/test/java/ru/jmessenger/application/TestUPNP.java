@@ -23,8 +23,8 @@ public class TestUPNP {
 
         PortMapping desiredMapping =
                 new PortMapping(
-                        3128,
-                        "192.168.1.20",
+                        3129,
+                        "192.168.0.11",
                         PortMapping.Protocol.TCP,
                         "My Port Mapping"
                 );
