@@ -93,21 +93,21 @@ public class ConnectionManager extends Thread {
         private void listenSocket() {
             try {
                 socket.setSoTimeout(TIMEOUT); //ждем ответа TIMEOUT миллисек
-                OutputStream os = socket.getOutputStream();
                 InputStream is = socket.getInputStream();
-
+                OutputStream os = socket.getOutputStream();
                 byte[] buf = new byte[BUFF_LEN];
                 int r = 0;
                 String request;
                 while (true) {
                     try {
                         if ((r = is.read(buf)) > 0) {
-                            //получили от пользователя строку request
-                            request = new String(buf, 0, r);
-                            //TODO
-                            //обрабатываем новую строку
-                            System.out.println(request);
-                            os.write(buf, 0, r);
+                            //получаем новый пакет
+                            try {
+                                Package receivedPack = Package.deserialize(buf);
+
+                            } catch (Exception e) {
+                                System.out.println("failed to deserialize");
+                            }
                         } else {
                             //клиент отключился
                             closeConnection();
@@ -121,16 +121,17 @@ public class ConnectionManager extends Thread {
             }
         }
 
-        synchronized public void sendPackage(Package aPackage) {
-
+        synchronized public void sendPackage(Package aPackage) throws IOException {
+            byte[] serialized = aPackage.serialize();
+            OutputStream os = socket.getOutputStream();
+            os.write(serialized, 0, serialized.length);
         }
 
         public void closeConnection() {
             try {
-                //System.out.println("Closing connection to " + socket.getInetAddress() + ":" + socket.getPort());
                 socket.close();
             } catch (IOException e) {
-                //System.out.println("failed to close connection");
+                System.out.println("failed to close connection");
             }
             //delete from connections
             System.out.printf("Connection to %s:%s was closed\n", socket.getInetAddress(), socket.getPort());
