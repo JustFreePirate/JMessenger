@@ -1,21 +1,32 @@
-package ru.jmessenger.application;
+package ru.jmessenger.application.common;
 
 import java.util.Date;
 
 /**
- * Created by Сергей on 15.11.2015.
+ * Created by dima on 17.11.15.
  */
-public class TemproraryClassMessage {
+public class Package {
     private final String senderLogin;
     private final String recipientLogin;
     private final String date;
     private final String message;
+    private final byte[] file;
 
-    TemproraryClassMessage(String senderLogin, String recipientLogin, String date, String message){
+
+    Package(String message, String senderLogin, String recipientLogin) {
+        this.senderLogin = senderLogin;
+        this.recipientLogin = recipientLogin;
+        this.date = new Date().toString();
+        this.message = message;
+        this.file = null;
+    }
+
+    Package(String message, String senderLogin, String recipientLogin, String date, byte[] file) {
         this.senderLogin = senderLogin;
         this.recipientLogin = recipientLogin;
         this.date = date;
         this.message = message;
+        this.file = file;
     }
 
     public String getSenderLogin() {
@@ -29,6 +40,9 @@ public class TemproraryClassMessage {
     }
     public String getMessage() {
         return message;
+    }
+    public byte[] getFile() {
+        return file;
     }
 
     @Override

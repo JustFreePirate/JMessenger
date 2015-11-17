@@ -1,4 +1,4 @@
-package ru.jmessenger.application;
+package ru.jmessenger.application.db;
 
 import org.hamcrest.CoreMatchers;
 import org.hamcrest.MatcherAssert;

@@ -1,4 +1,4 @@
-package ru.jmessenger.application;
+package ru.jmessenger.application.db;
 
 import java.util.Date;
 
@@ -20,7 +20,6 @@ public class TemproraryClassUser {
     public String getHashPass() {
         return hashPass;
     }
-
 }
 
 

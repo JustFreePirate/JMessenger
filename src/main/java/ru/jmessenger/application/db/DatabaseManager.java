@@ -1,4 +1,4 @@
-package ru.jmessenger.application;
+package ru.jmessenger.application.db;
 
 import org.sql2o.Sql2o;
 import org.sql2o.Connection;

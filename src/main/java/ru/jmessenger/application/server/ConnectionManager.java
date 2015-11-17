@@ -90,6 +90,8 @@ public class ConnectionManager extends Thread {
             }
         }
 
+        //synchronized public void sendPackage()
+
         public void closeConnection() {
             try {
                 //System.out.println("Closing connection to " + socket.getInetAddress() + ":" + socket.getPort());
