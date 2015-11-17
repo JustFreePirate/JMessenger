@@ -31,6 +31,8 @@ class SampleClient extends Thread
             System.out.println(data);
             //s.shutdownOutput();
             //s.close();
+            Thread.sleep(10000);
+            s.close();
         }
         catch(Exception e)
         {System.out.println("init error: "+e);} // вывод исключений
