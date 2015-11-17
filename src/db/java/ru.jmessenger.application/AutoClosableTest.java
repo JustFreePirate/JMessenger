@@ -13,6 +13,11 @@ import static org.hamcrest.MatcherAssert.*;
 
 import java.sql.*;
 
+
+/**
+ *  Файл неактуален
+ */
+
 /**
  * Created by Сергей on 14.11.2015.
  *
@@ -71,19 +76,20 @@ public class AutoClosableTest {
         //Создание таблицы с недоставленными сообщениями
         //Пока что не указываю от кого
         final String createMessagesTable =
-                        "CREATE TABLE\n" +
+                "CREATE TABLE\n" +
                         "    `messages` (\n" +
                         "        `message_id`   INT AUTO_INCREMENT PRIMARY KEY,\n" +
-                        "        `user_id`      INT,\n" +
-                        "        `date`         VARCHAR(100) NOT NULL,\n" +              //It must be a DATA
+                        "        `sender_id`      INT,\n" +
+                        "        `recipient_id`      INT,\n" +
+                        "        `date`         VARCHAR(100) NOT NULL,\n" +
                         "        `message`      LONGTEXT,\n" +
-                        "        FOREIGN KEY (user_id) REFERENCES users(user_id)\n" +
+                        "        FOREIGN KEY (sender_id) REFERENCES users(user_id)\n" +
                         "    );";
 
         //Если таблицы ещё не созданы, создаем.
         //если таблицы уже есть, оно упадет
         //попозже добавлю какой-нибудь if, или улучшу sql-запрос
-//        try(Connection con = sql2o.beginTransaction()
+//        try(Connection con = sql2o.beginTransaction()) {
 //            //Выполняем запрос на создание таблицы
 //            con.createQuery(createUsersTable).executeUpdate();
 //            con.createQuery(createMessagesTable).executeUpdate();
@@ -125,9 +131,9 @@ public class AutoClosableTest {
         //Тут нужен другой запрос, так как таблица с сообщениями немного другая
         final String insertMessage =
                 "INSERT INTO\n" +
-                "    `messages` (`user_id`, `date`, `message`)\n" +
+                "    `messages` (`sender_id`, `recipient_id`, `date`, `message`)\n" +
                 "VALUES\n" +
-                "    (:user_id, :date_param, :message_param);";
+                "    (:sender_id, :recipient_id, :date_param, :message_param);";
 
 
         //Добавляю немного случайности
@@ -138,13 +144,15 @@ public class AutoClosableTest {
         try(Connection con = sql2o.beginTransaction()) {
             //Добавляем в базу с сообщениями сообщения
             con.createQuery(insertMessage)
-                    .addParameter("user_id", id1)
+                    .addParameter("sender_id", id1)
+                    .addParameter("recipient_id", id2)
                     .addParameter("date_param", date)
                     .addParameter("message_param", "loooooooongtext #id" + id1.toString())
                     .executeUpdate();
 
             con.createQuery(insertMessage)
-                    .addParameter("user_id", id2)
+                    .addParameter("sender_id", id2)
+                    .addParameter("recipient_id", id1)
                     .addParameter("date_param", date)
                     .addParameter("message_param", "loooooooongtext #id" + id2.toString())
                     .executeUpdate();
