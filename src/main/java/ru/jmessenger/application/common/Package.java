@@ -13,15 +13,11 @@ public class Package {
     private final byte[] file;
 
 
-    Package(String message, String senderLogin, String recipientLogin) {
-        this.senderLogin = senderLogin;
-        this.recipientLogin = recipientLogin;
-        this.date = new Date().toString();
-        this.message = message;
-        this.file = null;
+    public Package(String message, String senderLogin, String recipientLogin) {
+        this(message, senderLogin, recipientLogin, new Date().toString(), null);
     }
 
-    Package(String message, String senderLogin, String recipientLogin, String date, byte[] file) {
+    public Package(String message, String senderLogin, String recipientLogin, String date, byte[] file) {
         this.senderLogin = senderLogin;
         this.recipientLogin = recipientLogin;
         this.date = date;

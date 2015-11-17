@@ -18,7 +18,7 @@ public class EchoClient {
         try {
             //System.setProperty("javax.net.ssl.trustStore", "client_key_store.jks");
             SSLSocketFactory socketFactory = getSocketFactory();
-            SSLSocket sslSocket = (SSLSocket) socketFactory.createSocket("localhost", 8888);
+            SSLSocket sslSocket = (SSLSocket) socketFactory.createSocket("localhost", 3128);
 
             printSocketInfo(sslSocket);
 

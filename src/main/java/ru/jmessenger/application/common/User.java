@@ -7,7 +7,7 @@ public class User {
     private final String login;
     private final String hashPass;
 
-    User(String login, String hashPass) {
+    public User(String login, String hashPass) {
         this.login = login;
         this.hashPass = hashPass;
     }
