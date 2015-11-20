@@ -15,6 +15,7 @@ public enum PackageType {
     RESP_MESSAGE_DELIVERED, // client response too
     RESP_MESSAGE_IN_QUEUE,
     RESP_MESSAGE_USER_NOT_FOUND,
-    RESP_SEARCH_ANSWER,
+    RESP_SEARCH_ANSWER;
+
 }
 

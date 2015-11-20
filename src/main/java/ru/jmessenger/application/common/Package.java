@@ -1,5 +1,7 @@
 package ru.jmessenger.application.common;
 
+import ru.jmessenger.application.server.ConnectionManager;
+
 import java.io.*;
 import java.util.Date;
 
@@ -7,15 +9,26 @@ import java.util.Date;
  * Created by dima on 17.11.15.
  */
 public class Package implements Serializable {
-    public static final int BUFF_LEN = 100;
+    public static final int BUFF_LEN = ConnectionManager.BUFF_LEN;
 
     private Login login;
-    private final Date date;
-    private final String message;
-    private final byte[] file;
-    private final Pass pass;
+    private Date date;
+    private String message;
+    private byte[] file;
+    private Pass pass;
+    private Login[] searchAnswer;
     private PackageType type;
 
+    //Response on search request
+    public Package(Login[] searchAnswer) {
+        type = PackageType.RESP_SEARCH_ANSWER;
+        this.searchAnswer = searchAnswer;
+    }
+
+    //Short response
+    public Package(PackageType type) {
+        this.type = type;
+    }
 
     //auth request
     public Package(Login login, Pass pass) {

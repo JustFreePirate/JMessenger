@@ -2,6 +2,7 @@ package ru.jmessenger.application.server;
 
 import ru.jmessenger.application.common.*;
 import ru.jmessenger.application.common.Package;
+import sun.rmi.runtime.Log;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
@@ -22,9 +23,9 @@ import java.util.HashMap;
  */
 public class ConnectionManager extends Thread {
     private final int PORT;
-    private final int TIMEOUT = 500;
-    private final int BUFF_LEN = 100;
-    private HashMap<String, Connection> connections;
+    private static final int TIMEOUT = 500;
+    public static final int BUFF_LEN = 1024*5;
+    private HashMap<Login, Connection> connections;
     private SSLServerSocketFactory serverSocketFactory;
     private static String ksName = "src/res/server_key_store.jks";
     private static char[] crtPass = "free240195".toCharArray();
@@ -52,10 +53,27 @@ public class ConnectionManager extends Thread {
         return sslContext.getServerSocketFactory();
     }
 
-    synchronized private void addConnectionToMap(String login, Connection connection) {
+    synchronized private void addConnectionToMap(Login login, Connection connection) {
         Connection previous = connections.put(login, connection);
         if (previous != null) {
             System.out.println("Someone connected from two machines");
+        }
+    }
+
+    //send pack and return type of response
+    private PackageType sendPackage(Login to, Package pack) {
+        Connection connection = connections.get(to);
+        if (connection != null) {
+            try {
+                connection.sendPackage(pack);
+                return PackageType.RESP_MESSAGE_DELIVERED;
+            } catch (IOException e) {
+                System.out.println(e.getMessage());
+                //TODO push to mess query
+                return PackageType.RESP_MESSAGE_IN_QUEUE;
+            }
+        } else {
+            return PackageType.RESP_MESSAGE_USER_NOT_FOUND;
         }
     }
 
@@ -83,7 +101,7 @@ public class ConnectionManager extends Thread {
 
     class Connection extends Thread {
         private final Socket socket;
-        private String login;
+        private Login login;
         PackageService packageService;
 
         Connection(Socket socket) {
@@ -138,7 +156,25 @@ public class ConnectionManager extends Thread {
             byte[] serialized = aPackage.serialize();
             OutputStream os = socket.getOutputStream();
             os.write(serialized, 0, serialized.length);
+            os.flush();
         }
+
+        void sendResponse(PackageType type) {
+            try {
+                sendPackage(new Package(type));
+            } catch (IOException e) {
+                System.out.println("Failed to send response");
+            }
+        }
+
+        void sendResponse(Login[] searchAnswer) {
+            try {
+                sendPackage(new Package(searchAnswer));
+            } catch (IOException e) {
+                System.out.println("Failed to send response");
+            }
+        }
+
 
         void closeConnection() {
             try {
@@ -165,13 +201,26 @@ public class ConnectionManager extends Thread {
                         doAuth();
                     } else {
                         PackageType packType = pack.getType();
-                        if (packType == PackageType.REQ_SEND_MESSAGE) {
+                        switch (packType) {
+                            case REQ_SEND_MESSAGE:
+                            case REQ_SEND_FILE:
+                                Login from = login; //current connection login
+                                Login to = pack.getLogin();
+                                pack.setLogin(from);
+                                PackageType responseType = ConnectionManager.this.sendPackage(to, pack);
+                                sendResponse(responseType);
+                                break;
 
-                        } else if (packType == PackageType.REQ_SEND_FILE) {
+                            case REQ_SEARCH:
+                                //TODO search request
+                                Login[] searchAnswer = null; //searchForLogin(pack.getLogin());
+                                sendResponse(searchAnswer);
+                                break;
 
-                        } else if (packType == PackageType.REQ_SEARCH) {
-
+                            default:
+                                System.out.println("Bad type of request");
                         }
+
                     }
                 } catch (AuthenticationException e) {
                     System.out.println(e.getMessage());
@@ -185,15 +234,12 @@ public class ConnectionManager extends Thread {
                     //check pass and login
                     boolean match = true; //isMatch(packLogin, packPass); TODO запрос к базе данных
                     if (match) {
-                        login = packLogin.toString();
-                        addConnectionToMap(packLogin.toString(), Connection.this);
+                        login = packLogin; //set connection login
+                        addConnectionToMap(packLogin, Connection.this);
+                        sendResponse(PackageType.RESP_AUTH_OK);
+                        //TODO send messages from query
                     } else {
-                        currentPackage.setType(PackageType.RESP_AUTH_FAILED);
-                        try {
-                            sendPackage(currentPackage);
-                        } catch (IOException e) {
-                            System.out.println("Failed to send response");
-                        }
+                        sendResponse(PackageType.RESP_AUTH_FAILED);
                     }
                 } else {
                     throw new AuthenticationException("Expected AUTH REQUEST");

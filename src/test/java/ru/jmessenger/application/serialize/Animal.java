@@ -1,5 +1,8 @@
 package ru.jmessenger.application.serialize;
 
+import ru.jmessenger.application.common.*;
+import ru.jmessenger.application.common.Package;
+
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
