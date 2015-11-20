@@ -8,7 +8,8 @@ public class Login {
         this.login = login;
     }
 
-    public String getLogin() {
+    @Override
+    public String toString() {
         return login;
     }
 

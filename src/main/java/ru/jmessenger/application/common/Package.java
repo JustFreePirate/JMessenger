@@ -51,6 +51,21 @@ public class Package implements Serializable {
         this.type = type;
     }
 
+    public PackageType getType() {
+        return type;
+    }
+
+    public Login getLogin() {
+        return login;
+    }
+
+    public void setLogin(Login login) {
+        this.login = login;
+    }
+
+    public Pass getPass() {
+        return pass;
+    }
 
     public byte[] serialize() throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream(BUFF_LEN);
@@ -66,13 +81,5 @@ public class Package implements Serializable {
                 pack = (Package) ois.readObject();
         }
         return pack;
-    }
-
-    public Login getLogin() {
-        return login;
-    }
-
-    public void setLogin(Login login) {
-        this.login = login;
     }
 }

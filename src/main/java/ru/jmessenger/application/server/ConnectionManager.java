@@ -3,10 +3,10 @@ package ru.jmessenger.application.server;
 import ru.jmessenger.application.common.*;
 import ru.jmessenger.application.common.Package;
 
-import javax.net.ServerSocketFactory;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLServerSocketFactory;
+import javax.security.sasl.AuthenticationException;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -52,6 +52,13 @@ public class ConnectionManager extends Thread {
         return sslContext.getServerSocketFactory();
     }
 
+    synchronized private void addConnectionToMap(String login, Connection connection) {
+        Connection previous = connections.put(login, connection);
+        if (previous != null) {
+            System.out.println("Someone connected from two machines");
+        }
+    }
+
     //Ищем входящие соединения и создаем для них Connection
     @Override
     public void run() {
@@ -77,11 +84,13 @@ public class ConnectionManager extends Thread {
     class Connection extends Thread {
         private final Socket socket;
         private String login;
+        PackageService packageService;
 
-        public Connection(Socket socket) {
+        Connection(Socket socket) {
             System.out.println("someone connected");
             System.out.printf("Connection to %s:%s is open\n", socket.getInetAddress(), socket.getPort());
             this.socket = socket;
+            packageService = new PackageService();
             start(); //соединение в своем потоке
         }
 
@@ -104,7 +113,7 @@ public class ConnectionManager extends Thread {
                             //получаем новый пакет
                             try {
                                 Package receivedPack = Package.deserialize(buf);
-
+                                packageService.processPackage(receivedPack);
                             } catch (Exception e) {
                                 System.out.println("failed to deserialize");
                             }
@@ -121,13 +130,17 @@ public class ConnectionManager extends Thread {
             }
         }
 
-        synchronized public void sendPackage(Package aPackage) throws IOException {
+        boolean isAuthorized() {
+            return login == null;
+        }
+
+        synchronized void sendPackage(Package aPackage) throws IOException {
             byte[] serialized = aPackage.serialize();
             OutputStream os = socket.getOutputStream();
             os.write(serialized, 0, serialized.length);
         }
 
-        public void closeConnection() {
+        void closeConnection() {
             try {
                 socket.close();
             } catch (IOException e) {
@@ -135,6 +148,58 @@ public class ConnectionManager extends Thread {
             }
             //delete from connections
             System.out.printf("Connection to %s:%s was closed\n", socket.getInetAddress(), socket.getPort());
+        }
+
+
+        class PackageService {
+            Package currentPackage;
+
+            PackageService() {
+            }
+
+            //обрабатывает пришедший пакет
+            void processPackage(Package pack) {
+                currentPackage = pack;
+                try {
+                    if (!isAuthorized()) {
+                        doAuth();
+                    } else {
+                        PackageType packType = pack.getType();
+                        if (packType == PackageType.REQ_SEND_MESSAGE) {
+
+                        } else if (packType == PackageType.REQ_SEND_FILE) {
+
+                        } else if (packType == PackageType.REQ_SEARCH) {
+
+                        }
+                    }
+                } catch (AuthenticationException e) {
+                    System.out.println(e.getMessage());
+                }
+            }
+
+            void doAuth() throws AuthenticationException {
+                if (currentPackage.getType() == PackageType.REQ_AUTH) {
+                    Login packLogin = currentPackage.getLogin();
+                    Pass packPass = currentPackage.getPass();
+                    //check pass and login
+                    boolean match = true; //isMatch(packLogin, packPass); TODO запрос к базе данных
+                    if (match) {
+                        login = packLogin.toString();
+                        addConnectionToMap(packLogin.toString(), Connection.this);
+                    } else {
+                        currentPackage.setType(PackageType.RESP_AUTH_FAILED);
+                        try {
+                            sendPackage(currentPackage);
+                        } catch (IOException e) {
+                            System.out.println("Failed to send response");
+                        }
+                    }
+                } else {
+                    throw new AuthenticationException("Expected AUTH REQUEST");
+                }
+            }
+
         }
     }
 }

@@ -3,7 +3,7 @@ package ru.jmessenger.application.common;
 /**
  * Created by dima on 17.11.15.
  */
-class Pass {
+public class Pass {
     Pass(String pass) {
         this.pass = pass;
     }
