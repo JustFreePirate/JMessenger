@@ -4,6 +4,7 @@ import java.util.Date;
 
 /**
  * Created by Сергей on 15.11.2015.
+ * del
  */
 public class TemproraryClassMessage {
     private final String senderLogin;
