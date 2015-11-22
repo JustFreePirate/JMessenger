@@ -20,7 +20,7 @@ public class DatabaseManager {
     static final String JDBC_DRIVER = "com.mysql.jdbc.Driver";
     static final String DB_URL = "jdbc:mysql://localhost:3306/my_db";
     static final String USER = "admin";
-    static final String PASS = "admin";
+    static final String PASS = "admind";
 
     static final String USER_TABLE = "users";
     static final String PACKAGE_TABLE = "packages";

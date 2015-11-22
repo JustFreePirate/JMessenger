@@ -137,12 +137,14 @@ public class ConnectionManager extends Thread {
                     try {
                         if ((r = is.read(buf)) > 0) {
                             //получаем новый пакет
+                            Package receivedPack;
                             try {
-                                Package receivedPack = Package.deserialize(buf);
-                                packageService.processPackage(receivedPack);
+                                receivedPack = Package.deserialize(buf);
                             } catch (Exception e) {
                                 System.out.println("failed to deserialize");
+                                continue;
                             }
+                            packageService.processPackage(receivedPack);
                         } else {
                             //клиент отключился
                             closeConnection();
