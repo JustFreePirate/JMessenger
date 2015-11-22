@@ -265,6 +265,7 @@ public class ConnectionManager extends Thread {
                         sendResponse(PackageType.RESP_AUTH_FAILED);
                     }
                 } else {
+                    sendResponse(PackageType.RESP_AUTH_FAILED);
                     throw new AuthenticationException("Expected AUTH REQUEST");
                 }
             }

@@ -87,6 +87,7 @@ public class Client {
         String passOrMessage = scanner.next();
 
 
+
         if( command.toLowerCase().equals("auth") ){
             return new Package(new Login(login), new Pass(passOrMessage));
         } else if ( command.toLowerCase().equals("send") ) {
