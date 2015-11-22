@@ -144,6 +144,7 @@ public class ConnectionManager extends Thread {
                     }
                 }
             } catch (Exception e) {
+                System.out.println(e);
                 closeConnection();
             }
         }

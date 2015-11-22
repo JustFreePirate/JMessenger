@@ -80,6 +80,8 @@ public class Package implements Serializable {
         return pass;
     }
 
+
+    //TODO rework serialize and deserialize
     public byte[] serialize() throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream(BUFF_LEN);
         try (ObjectOutputStream oos = new ObjectOutputStream(baos)) {
