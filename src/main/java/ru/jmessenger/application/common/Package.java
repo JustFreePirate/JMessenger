@@ -50,6 +50,10 @@ public class Package implements Serializable {
         this(PackageType.REQ_SEND_FILE, recipientLogin, null, null, file, new Date());
     }
 
+    //create message-package from DB
+    public Package(String message, Login recipientLogin, Date date) {
+        this(PackageType.REQ_SEND_MESSAGE, recipientLogin, null, message, null, new Date());
+    }
 
     private Package(PackageType type, Login login, Pass pass, String message, byte[] file, Date date) {
         this.type = type;
@@ -80,8 +84,18 @@ public class Package implements Serializable {
         return pass;
     }
 
+    public String getMessage() {
+        return message;
+    }
 
-    //TODO rework serialize and deserialize
+    public byte[] getFile() {
+        return file;
+    }
+
+    public Date getDate() {
+        return date;
+    }
+
     public byte[] serialize() throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream(BUFF_LEN);
         try (ObjectOutputStream oos = new ObjectOutputStream(baos)) {

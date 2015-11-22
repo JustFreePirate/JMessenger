@@ -1,10 +1,16 @@
 package ru.jmessenger.application.db;
 
-import org.sql2o.Sql2o;
 import org.sql2o.Connection;
+import org.sql2o.Sql2o;
+import ru.jmessenger.application.common.*;
+import ru.jmessenger.application.common.Package;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Created by Сергей on 15.11.2015.
@@ -17,14 +23,28 @@ public class DatabaseManager {
     static final String PASS = "admin";
 
     static final String USER_TABLE = "users";
-    static final String MESSAGE_TABLE = "messages";
+    static final String PACKAGE_TABLE = "packages";
+
+    private class Pack {
+        public final String login;
+        public final String date;
+        public final String message;
+        public final byte[] file;
+
+        Pack () {
+            this.date = null;
+            this.file = null;
+            this.login = null;
+            this.message = null;
+        }
+    }
 
     private static Sql2o sql2o;
     static {
         sql2o = new Sql2o(DB_URL, USER, PASS);
     }
 
-    DatabaseManager(){
+    public DatabaseManager(){
         try {
             Class.forName(JDBC_DRIVER).newInstance();
         } catch (Throwable t) {
@@ -34,8 +54,8 @@ public class DatabaseManager {
         if(!isTableExists(USER_TABLE)){
             createUsersTable();
         }
-        if(!isTableExists(MESSAGE_TABLE)){
-            createMessagesTable();
+        if(!isTableExists(PACKAGE_TABLE)){
+            createPackagesTable();
         }
 
     }
@@ -66,15 +86,16 @@ public class DatabaseManager {
         } catch (Throwable t) {}
     }
 
-    private void createMessagesTable () {
+    private void createPackagesTable () {
         final String createTable =
                 "CREATE TABLE\n" +
-                        "    `" + MESSAGE_TABLE + "` (\n" +
-                        "        `message_id`   INT AUTO_INCREMENT PRIMARY KEY,\n" +
+                        "    `" + PACKAGE_TABLE + "` (\n" +
+                        "        `package_id`   INT AUTO_INCREMENT PRIMARY KEY,\n" +
                         "        `sender_id`    INT,\n" +
                         "        `recipient_id` INT,\n" +
                         "        `date`         LONGTEXT NOT NULL,\n" +
                         "        `message`      LONGTEXT,\n" +
+                        "        `file`         LONGTEXT,\n" +
                         "        FOREIGN KEY (sender_id) REFERENCES users(user_id)\n" +
                         "    );";
 
@@ -84,43 +105,47 @@ public class DatabaseManager {
         } catch (Throwable t) {}
     }
 
-    public void addMessage (TemproraryClassMessage message){
-        final String insertMessage =
+    public void addPackage (Login login, Package aPackage){
+        //Не знаю почему, но похоже, что login это recipient,
+        //А aPackage.getLogin() -- sender
+
+        final String insertPackage =
                 "INSERT INTO\n" +
-                "    `messages` (`sender_id`, `recipient_id`, `date`, `message`)\n" +
-                "VALUES\n" +
-                "    (:sender_id, :recipient_id, :date_param, :message_param);";
+                        "    `" + PACKAGE_TABLE + "` (`sender_id`, `recipient_id`, `date`, `message`, `file`)\n" +
+                        "VALUES\n" +
+                        "    (:sender_id, :recipient_id, :date_param, :message_param, :file_param);";
 
         final String getLogin =
                 "SELECT user_id " +
-                "FROM users " +
-                "WHERE login = :userLogin";
-
-        Integer senderId = (Integer) sql2o.createQuery(getLogin)
-                .addParameter("userLogin", message.getSenderLogin())
-                .executeScalar();
+                        "FROM users " +
+                        "WHERE login = :userLogin";
 
         Integer recipientId = (Integer) sql2o.createQuery(getLogin)
-                .addParameter("userLogin", message.getRecipientLogin())
+                .addParameter("userLogin", login.toString())
+                .executeScalar();
+
+        Integer senderId = (Integer) sql2o.createQuery(getLogin)
+                .addParameter("userLogin", aPackage.getLogin().toString())
                 .executeScalar();
 
         try(Connection con = sql2o.beginTransaction()) {
-            con.createQuery(insertMessage)
+            con.createQuery(insertPackage)
                     .addParameter("sender_id", senderId)
                     .addParameter("recipient_id", recipientId)
-                    .addParameter("date_param", message.getDate())
-                    .addParameter("message_param", message.getMessage())
+                    .addParameter("date_param", aPackage.getDate().toString())
+                    .addParameter("message_param", aPackage.getMessage())
+                    .addParameter("file_param", aPackage.getFile())
                     .executeUpdate();
             con.commit();
         }
     }
 
-    public void addUser (TemproraryClassUser user){
+    public void addUser (User user){
         final String insertPerson =
                 "INSERT INTO\n" +
-                "    `users` (`login`, `hash_pass`)\n" +
-                "VALUES\n" +
-                "    (:loginParam, :hashPassParam);";
+                        "    `users` (`login`, `hash_pass`)\n" +
+                        "VALUES\n" +
+                        "    (:loginParam, :hashPassParam);";
 
         try(Connection con = sql2o.beginTransaction()) {
             con.createQuery(insertPerson)
@@ -131,55 +156,143 @@ public class DatabaseManager {
         }
     }
 
-    public static List<TemproraryClassMessage> getMessageListForUser(TemproraryClassUser user) {
+    public void updateUser (User user){
+        final String updateUser =
+                "UPDATE users " +
+                        "SET    hash_pass = :hashPassParam " +
+                        "WHERE  login = :loginParam ;";
 
-        final String getRecipientId =
-                "SELECT user_id " +
-                "FROM users " +
-                "WHERE login = :userLogin";
-
-        Integer recipientId = (Integer) sql2o.createQuery(getRecipientId)
-                .addParameter("userLogin", user.getLogin())
-                .executeScalar();
-
-        //Этот запрос я писал больше двух часов
-        String sql =
-                "SELECT login AS senderLogin, :login AS recipientLogin, date, message " +
-                        "FROM " +
-                        "        users " +
-                        "        Inner JOIN messages " +
-                        "            ON users.user_id = messages.sender_id " +
-                        "WHERE recipient_id = (:id);";
-
-        try(Connection con = sql2o.open()) {
-           return con.createQuery(sql)
-                   .addParameter("login", user.getLogin())
-                   .addParameter("id", recipientId)
-                   .executeAndFetch(TemproraryClassMessage.class);
+        try (Connection con = sql2o.open()) {
+            con.createQuery(updateUser)
+                    .addParameter("loginParam", user.getLogin())
+                    .addParameter("hashPassParam", user.getHashPass())
+                    .executeUpdate();
         }
     }
 
-    public static void main(String[] args) {
-        DatabaseManager databaseManager = new DatabaseManager();
+//    public boolean isUserExists (String login) {
+//        final String findUser =
+//                "SELECT count(*) " +
+//                        "FROM users " +
+//                        "WHERE login = :loginParam" ;
+//
+//        Long result = (Long) sql2o
+//                .createQuery(findUser)
+//                .addParameter("loginParam", login)
+//                .executeScalar();
+//        return result > 0;
+//    }
+//    public boolean isUserExists (String login, String hashPass) {
+//        User user = new User (login, hashPass);
+//        return isUserExists(user);
+//    }
 
-        //Просто создаем участников. Это ещё никак не относится к базе данных
-        TemproraryClassUser Bob =  new TemproraryClassUser("Bob", "Nothing");
-        TemproraryClassUser Alice =  new TemproraryClassUser("Alice", "Nothing");
-        TemproraryClassUser Mallory =  new TemproraryClassUser("Mallory", "Nothing");
+    public boolean isUserExists (User user) {
+        final String findUser =
+                "SELECT count(*) " +
+                        "FROM users " +
+                        "WHERE login = :loginParam AND hash_pass = :hashPassParam;" ;
 
-        //Добавляем участников в базу. (например, они прошли регистрацию).
-        databaseManager.addUser(Bob);
-        databaseManager.addUser(Alice);
-        databaseManager.addUser(Mallory);
-
-        // Bob -- "Ti kek" --> Alice
-        // Alice -- "Nope" --> Bob
-        // Mallory -- "Misha kek" --> Bob
-        databaseManager.addMessage(new TemproraryClassMessage("Bob", "Alice", (new Date()).toString(), "Ti kek"));
-        databaseManager.addMessage(new TemproraryClassMessage("Alice", "Bob", (new Date()).toString(), "Nope"));
-        databaseManager.addMessage(new TemproraryClassMessage("Mallory", "Bob", (new Date()).toString(), "Misha kek"));
-
-        //Хотим узнать, какие сообщения пришли Бобу
-        getMessageListForUser(Bob).forEach(System.out::println);
+        Long result = (Long) sql2o
+                .createQuery(findUser)
+                .addParameter("loginParam", user.getLogin())
+                .addParameter("hashPassParam", user.getHashPass())
+                .executeScalar();
+        return result > 0;
     }
+    public boolean isUserExists (Login login) {
+        final String findUser =
+                "SELECT count(*) " +
+                        "FROM users " +
+                        "WHERE login = :loginParam;" ;
+
+        Long result = (Long) sql2o
+                .createQuery(findUser)
+                .addParameter("loginParam", login.toString())
+                .executeScalar();
+        return result > 0;
+    }
+
+    private List<Package> mapToPackage(List<Pack> list) {
+        List<Package> result = new LinkedList<>();
+
+        //String string = "January 2, 2010";
+        //DateFormat format = new SimpleDateFormat("MMMM d, yyyy", Locale.ENGLISH);
+        //Date date = format.parse(string);
+
+        //TODO Сделать настоящее время
+        for(Pack entry : list){
+            result.add(new Package(entry.message, new Login(entry.login), new Date()));
+        }
+        return result;
+    }
+
+    public List<Package> getPackageListForUser(Login login) {
+
+        final String getRecipientId =
+                "SELECT user_id " +
+                        "FROM users " +
+                        "WHERE login = :loginParam";
+
+        Integer recipientId = (Integer) sql2o.createQuery(getRecipientId)
+                .addParameter("loginParam", login.toString())
+                .executeScalar();
+
+
+        String sql =
+                "SELECT login, date, message " +
+                        "FROM " +
+                        "        users " +
+                        "        Inner JOIN " + PACKAGE_TABLE +
+                        "            ON users.user_id = " + PACKAGE_TABLE + ".sender_id " +
+                        "WHERE recipient_id = (:idParam);";
+
+        List<Pack> result = null;
+        try(Connection con = sql2o.open()) {
+            result =
+                    con.createQuery(sql)
+                            .addParameter("idParam", recipientId)
+                            .executeAndFetch(Pack.class);
+        } catch (Throwable t){
+            t.printStackTrace();
+        }
+
+        String sqlDelete =
+                "DELETE FROM `" + PACKAGE_TABLE + "`" +
+                        "WHERE recipient_id = :recipientIdParam;";
+
+        try(Connection con = sql2o.beginTransaction()) {
+            con.createQuery(sqlDelete)
+                    .addParameter("recipientIdParam", recipientId)
+                    .executeUpdate();
+            con.commit();
+        }
+
+        return mapToPackage(result);
+    }
+
+// Old version
+//    public static void main(String[] args)
+//        DatabaseManager databaseManager = new DatabaseManager();
+//
+//        //Просто создаем участников. Это ещё никак не относится к базе данных
+//        User Bob =  new User("Bob", "Nothing");
+//        User Alice =  new User("Alice", "Nothing");
+//        User Mallory =  new User("Mallory", "Nothing");
+//
+//        //Добавляем участников в базу. (например, они прошли регистрацию).
+//        databaseManager.addUser(Bob);
+//        databaseManager.addUser(Alice);
+//        databaseManager.addUser(Mallory);
+//
+//        // Bob -- "Ti kek" --> Alice
+//        // Alice -- "Nope" --> Bob
+//        // Mallory -- "Misha kek" --> Bob
+//        databaseManager.addPackage(new Package("Ti kek", "Bob", "Alice", (new Date()).toString(), null));
+//        databaseManager.addPackage(new Package("Nope", "Alice", "Bob", (new Date()).toString(), null));
+//        databaseManager.addPackage(new Package("Misha kek", "Mallory", "Bob", (new Date()).toString(), null));
+//
+//        //Хотим узнать, какие сообщения пришли Бобу
+//        getPackageListForUser(Bob).forEach(System.out::println);
+//    }
 }

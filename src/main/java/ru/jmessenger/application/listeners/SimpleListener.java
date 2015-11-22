@@ -1,5 +1,7 @@
 package ru.jmessenger.application.listeners;
 
+import ru.jmessenger.application.server.ConnectionManager;
+
 /**
  * Created by Дмитрий on 19.10.2015.
  */
@@ -16,5 +18,9 @@ public class SimpleListener implements OnGotAMessageListener {
     @Override
     public void onGotAMessage(String message) {
         System.out.println(message);
+    }
+
+    public static void main(String[] args) {
+        SimpleListener listener = new SimpleListener();
     }
 }

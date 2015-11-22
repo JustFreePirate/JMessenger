@@ -1,21 +1,25 @@
 package ru.jmessenger.application.common;
 
 /**
- * Created by dima on 17.11.15.
+ * Created by Сергей on 21.11.15.
  */
 public class User {
-    private final String login;
-    private final String hashPass;
+    private final Login login;
+    private final Pass pass;
 
-    public User(String login, String hashPass) {
+    public User(String login, String pass) {
+        this.login = new Login(login);
+        this.pass = new Pass(pass);
+    }
+    public User(Login login, Pass pass) {
         this.login = login;
-        this.hashPass = hashPass;
+        this.pass = pass;
     }
 
     public String getLogin() {
-        return login;
+        return login.toString();
     }
     public String getHashPass() {
-        return hashPass;
+        return String.valueOf(pass.getPass().hashCode());
     }
 }

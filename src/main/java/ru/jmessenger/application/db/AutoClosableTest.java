@@ -65,7 +65,7 @@ public class AutoClosableTest {
          */
         //Запрос на создание таблицы user-hash(pass)
         final String createUsersTable =
-                        "CREATE TABLE\n" +
+                "CREATE TABLE\n" +
                         "    `users` (\n" +
                         "        `user_id`      INT AUTO_INCREMENT,\n" +
                         "        `login`        VARCHAR(100) NOT NULL,\n" +
@@ -103,9 +103,9 @@ public class AutoClosableTest {
         //Запрос на создание записи в базе
         final String insertPerson =
                 "INSERT INTO\n" +
-                "    `users` (`login`, `hash_pass`)\n" +
-                "VALUES\n" +
-                "    (:login_param, :hash_pass_param);";
+                        "    `users` (`login`, `hash_pass`)\n" +
+                        "VALUES\n" +
+                        "    (:login_param, :hash_pass_param);";
 
         //Генерирую случайное имя
         String person = "person" + String.valueOf(Math.abs(random.nextInt() % 1000));
@@ -131,9 +131,9 @@ public class AutoClosableTest {
         //Тут нужен другой запрос, так как таблица с сообщениями немного другая
         final String insertMessage =
                 "INSERT INTO\n" +
-                "    `messages` (`sender_id`, `recipient_id`, `date`, `message`)\n" +
-                "VALUES\n" +
-                "    (:sender_id, :recipient_id, :date_param, :message_param);";
+                        "    `messages` (`sender_id`, `recipient_id`, `date`, `message`)\n" +
+                        "VALUES\n" +
+                        "    (:sender_id, :recipient_id, :date_param, :message_param);";
 
 
         //Добавляю немного случайности

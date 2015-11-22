@@ -2,6 +2,7 @@ package ru.jmessenger.application.server;
 
 import ru.jmessenger.application.common.*;
 import ru.jmessenger.application.common.Package;
+import ru.jmessenger.application.db.DatabaseManager;
 import sun.rmi.runtime.Log;
 
 import javax.net.ssl.KeyManagerFactory;
@@ -14,7 +15,7 @@ import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.security.KeyStore;
 import java.util.HashMap;
-
+import java.util.List;
 
 
 /**
@@ -29,10 +30,12 @@ public class ConnectionManager extends Thread {
     private SSLServerSocketFactory serverSocketFactory;
     private static String ksName = "src/res/server_key_store.jks";
     private static char[] crtPass = "free240195".toCharArray();
+    private static DatabaseManager databaseManager;
 
 
     ConnectionManager(int port) {
         this.PORT = port;
+        this.databaseManager = new DatabaseManager();
         connections = new HashMap<>();
         try {
             serverSocketFactory = getSocketFactory();
@@ -69,9 +72,13 @@ public class ConnectionManager extends Thread {
                 return PackageType.RESP_MESSAGE_DELIVERED;
             } catch (IOException e) {
                 System.out.println(e.getMessage());
-                //TODO push to mess query
+                databaseManager.addPackage(to, pack);
                 return PackageType.RESP_MESSAGE_IN_QUEUE;
             }
+        } else if (databaseManager.isUserExists(to)) {
+            //System.out.println(e.getMessage());
+            databaseManager.addPackage(to, pack);
+            return PackageType.RESP_MESSAGE_IN_QUEUE;
         } else {
             return PackageType.RESP_MESSAGE_USER_NOT_FOUND;
         }
@@ -125,6 +132,7 @@ public class ConnectionManager extends Thread {
                 byte[] buf = new byte[BUFF_LEN];
                 int r = 0;
                 String request;
+
                 while (true) {
                     try {
                         if ((r = is.read(buf)) > 0) {
@@ -144,13 +152,13 @@ public class ConnectionManager extends Thread {
                     }
                 }
             } catch (Exception e) {
-                System.out.println(e);
+                //e.printStackTrace();
                 closeConnection();
             }
         }
 
         boolean isAuthorized() {
-            return login == null;
+            return login != null;
         }
 
         synchronized void sendPackage(Package aPackage) throws IOException {
@@ -232,13 +240,27 @@ public class ConnectionManager extends Thread {
                 if (currentPackage.getType() == PackageType.REQ_AUTH) {
                     Login packLogin = currentPackage.getLogin();
                     Pass packPass = currentPackage.getPass();
+
                     //check pass and login
-                    boolean match = true; //isMatch(packLogin, packPass); TODO запрос к базе данных
+                    //Обращение к базе (1)
+                    boolean match = databaseManager.isUserExists(new User (packLogin,packPass));
                     if (match) {
                         login = packLogin; //set connection login
                         addConnectionToMap(packLogin, Connection.this);
                         sendResponse(PackageType.RESP_AUTH_OK);
-                        //TODO send messages from query
+
+                        //TODO Дима, посмотри сюда
+                        //Обращение к базе (2)
+                        try {
+                            List<Package> messageQueue = databaseManager.getPackageListForUser(packLogin);
+                            for (Package entry : messageQueue) {
+                                sendPackage(entry);
+                            }
+                        } catch (Throwable t) {
+                            System.out.println("Something went wrong");
+                        }
+
+
                     } else {
                         sendResponse(PackageType.RESP_AUTH_FAILED);
                     }
