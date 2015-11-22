@@ -187,30 +187,38 @@ public class DatabaseManager {
 //        return isUserExists(user);
 //    }
 
-    public boolean isUserExists (User user) {
+    public boolean isUserExists (User user)  throws Exception  {
         final String findUser =
                 "SELECT count(*) " +
                         "FROM users " +
                         "WHERE login = :loginParam AND hash_pass = :hashPassParam;" ;
+        try {
+            Long result = (Long) sql2o
+                    .createQuery(findUser)
+                    .addParameter("loginParam", user.getLogin())
+                    .addParameter("hashPassParam", user.getHashPass())
+                    .executeScalar();
+            return result > 0;
+        } catch (Throwable e){
+            throw new Exception("Something went wrong in \"boolean isUserExists (User user)\"");
+        }
 
-        Long result = (Long) sql2o
-                .createQuery(findUser)
-                .addParameter("loginParam", user.getLogin())
-                .addParameter("hashPassParam", user.getHashPass())
-                .executeScalar();
-        return result > 0;
     }
-    public boolean isUserExists (Login login) {
+    public boolean isUserExists (Login login) throws Exception {
         final String findUser =
                 "SELECT count(*) " +
                         "FROM users " +
                         "WHERE login = :loginParam;" ;
 
-        Long result = (Long) sql2o
-                .createQuery(findUser)
-                .addParameter("loginParam", login.toString())
-                .executeScalar();
-        return result > 0;
+        try {
+            Long result = (Long) sql2o
+                    .createQuery(findUser)
+                    .addParameter("loginParam", login.toString())
+                    .executeScalar();
+            return result > 0;
+        } catch (Throwable e){
+            throw new Exception("Something went wrong in \"boolean isUserExists (Login login)\"");
+        }
     }
 
     private List<Package> mapToPackage(List<Pack> list) {
