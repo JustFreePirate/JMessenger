@@ -30,9 +30,9 @@ public class Package implements Serializable {
         this.type = type;
     }
 
-    //auth request
-    public Package(Login login, Pass pass) {
-        this(PackageType.REQ_AUTH, login, pass, null, null, new Date());
+    //sign in/sign out/sign up request
+    public Package(PackageType type, Login login, Pass pass) {
+        this(type, login, pass, null, null, new Date());
     }
 
     //search request
@@ -47,7 +47,7 @@ public class Package implements Serializable {
 
     //send file to recipient
     public Package(byte[] file, Login recipientLogin) {
-        this(PackageType.REQ_SEND_FILE, recipientLogin, null, null, file, new Date());
+        this(PackageType.REQ_SEND_MESSAGE, recipientLogin, null, null, file, new Date());
     }
 
     //create message-package from DB

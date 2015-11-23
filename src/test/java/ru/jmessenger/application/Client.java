@@ -1,17 +1,17 @@
 package ru.jmessenger.application;
 
 import java.io.*;
-import java.net.ServerSocket;
-import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.security.KeyStore;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
+import java.text.SimpleDateFormat;
 import java.util.Scanner;
+
 import ru.jmessenger.application.common.*;
 import ru.jmessenger.application.common.Package;
+
 import javax.net.ssl.*;
-import javax.security.sasl.AuthenticationException;
 
 /**
  * Created by Сергей on 20.11.2015.
@@ -20,7 +20,7 @@ public class Client {
     private static String tsName = "src/res/client_key_store.jks";
     private static String ServerCrtName = "src/res/server.crt";
     private static final int TIMEOUT = 500;
-    private static final int BUFF_LEN = 1024*5;
+    private static final int BUFF_LEN = 1024 * 5;
     private static final int PORT = 3128;
     InputStream is;
     OutputStream os;
@@ -41,8 +41,7 @@ public class Client {
     public void start() throws Exception {
 
         Thread t = new Thread(new Runnable() {
-            public void run()
-            {
+            public void run() {
                 listen();
             }
         });
@@ -56,7 +55,7 @@ public class Client {
             Package aPackage;
             try {
                 aPackage = stringToPackage(str);
-            } catch ( Throwable e){
+            } catch (Throwable e) {
                 System.out.println("Incorrect command");
                 continue;
             }
@@ -65,11 +64,11 @@ public class Client {
         }
     }
 
-    private Package stringToPackage (String str) throws Exception {
+    private Package stringToPackage(String str) throws Exception {
         //Что тут происходит:
         //Пользователь набирает команду, она парсится следующим образом:
         //
-        //PackageType.REQ_AUTH;
+        //PackageType.REQ_SIGN_IN;
         // Auth; Bob; 1234567890;
         //
         //Пусть FILE = MESSAGE
@@ -87,13 +86,17 @@ public class Client {
         String passOrMessage = scanner.next();
 
 
-
-        if( command.toLowerCase().equals("auth") ){
-            return new Package(new Login(login), new Pass(passOrMessage));
-        } else if ( command.toLowerCase().equals("send") ) {
-            return new Package(passOrMessage, new Login(login));
-        } else {
-            throw new Exception();
+        switch (command) {
+            case "sign in":
+                return new Package(PackageType.REQ_SIGN_IN, new Login(login), new Pass(passOrMessage));
+            case "sign up":
+                return new Package(PackageType.REQ_SIGN_UP, new Login(login), new Pass(passOrMessage));
+            case "sign out":
+                return new Package(PackageType.REQ_SIGN_OUT);
+            case "send":
+                return new Package(passOrMessage, new Login(login));
+            default:
+                throw new Exception();
         }
     }
 
@@ -122,12 +125,14 @@ public class Client {
 
     private void sendPackage(Package aPackage) throws IOException {
         byte[] serialized = aPackage.serialize();
+        System.out.println("length of package: " + serialized.length);
         OutputStream outputstream = sslSocket.getOutputStream();
         OutputStreamWriter outputstreamwriter = new OutputStreamWriter(outputstream);
 
         outputstream.write(serialized, 0, serialized.length);
         outputstream.flush();
     }
+
     private void listen() {
         try {
 
@@ -155,8 +160,10 @@ public class Client {
 
     class PackageService {
         Package currentPackage;
+        SimpleDateFormat formatter;
 
         PackageService() {
+            formatter = new SimpleDateFormat("HH:mm:ss dd.MM.yyyy");
         }
 
         //обрабатывает пришедший пакет
@@ -165,30 +172,13 @@ public class Client {
 
             PackageType packType = pack.getType();
             switch (packType) {
-                //TODO почему REQ?
                 case REQ_SEND_MESSAGE:
-                    System.out.println("From: " + pack.getLogin() + "\n" + "-> " + pack.getMessage());
-                    break;
-
-                case RESP_MESSAGE_DELIVERED:
-                    System.out.println("MESSAGE_DELIVERED");
-                    break;
-                case RESP_MESSAGE_IN_QUEUE:
-                    System.out.println("MESSAGE_IN_QUEUE");
-                    break;
-                case RESP_MESSAGE_USER_NOT_FOUND:
-                    System.out.println("MESSAGE_USER_NOT_FOUND");
-                    break;
-
-                case RESP_AUTH_OK:
-                    System.out.println("AUTH_OK");
-                    break;
-                case RESP_AUTH_FAILED:
-                    System.out.println("AUTH_FAILED");
+                    System.out.println("From: " + pack.getLogin() + " " + formatter.format(pack.getDate()) +
+                            "\n" + "-> " + pack.getMessage());
                     break;
 
                 default:
-                    System.out.println("Bad type of request");
+                    System.out.println(packType.name());
             }
         }
     }

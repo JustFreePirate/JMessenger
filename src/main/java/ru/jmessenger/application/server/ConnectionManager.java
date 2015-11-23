@@ -3,12 +3,10 @@ package ru.jmessenger.application.server;
 import ru.jmessenger.application.common.*;
 import ru.jmessenger.application.common.Package;
 import ru.jmessenger.application.db.DatabaseManager;
-import sun.rmi.runtime.Log;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLServerSocketFactory;
-import javax.security.sasl.AuthenticationException;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -25,7 +23,7 @@ import java.util.List;
 public class ConnectionManager extends Thread {
     private final int PORT;
     private static final int TIMEOUT = 500;
-    public static final int BUFF_LEN = 1024*5;
+    public static final int BUFF_LEN = 1024 * 5;
     private HashMap<Login, Connection> connections;
     private SSLServerSocketFactory serverSocketFactory;
     private static String ksName = "src/res/server_key_store.jks";
@@ -36,13 +34,6 @@ public class ConnectionManager extends Thread {
     ConnectionManager(int port) {
         this.PORT = port;
         this.databaseManager = new DatabaseManager();
-        try {
-            databaseManager.addUser(new User("dima","12345"));
-            databaseManager.addUser(new User("bob","12345"));
-            databaseManager.addUser(new User("alice","12345"));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
         connections = new HashMap<>();
         try {
             serverSocketFactory = getSocketFactory();
@@ -92,7 +83,7 @@ public class ConnectionManager extends Thread {
                 exist = databaseManager.isUserExists(to);
             } catch (Exception e) {
                 System.out.println(e.getMessage());
-                return PackageType.RESP_MESSAGE_USER_NOT_FOUND;
+                return PackageType.RESP_SERVER_ERROR;
             }
             if (exist) {
                 //System.out.println(e.getMessage());
@@ -122,8 +113,6 @@ public class ConnectionManager extends Thread {
             System.out.println("Failed open ServerSocket: " + e);
         }
     }
-
-
 
 
     class Connection extends Thread {
@@ -230,78 +219,115 @@ public class ConnectionManager extends Thread {
             //обрабатывает пришедший пакет
             void processPackage(Package pack) {
                 currentPackage = pack;
-                try {
-                    if (!isAuthorized()) {
-                        doAuth();
-                    } else {
-                        PackageType packType = pack.getType();
-                        switch (packType) {
-                            case REQ_SEND_MESSAGE:
-                            case REQ_SEND_FILE:
-                                Login from = login; //current connection login
-                                Login to = pack.getLogin();
-                                pack.setLogin(from);
-                                PackageType responseType = ConnectionManager.this.sendPackage(to, pack);
-                                sendResponse(responseType);
-                                break;
+                if (!isAuthorized()) {
+                    doAuth();
+                } else {
+                    PackageType packType = pack.getType();
+                    switch (packType) {
+                        case REQ_SEND_MESSAGE:
+                            Login from = login; //current connection login
+                            Login to = pack.getLogin();
+                            pack.setLogin(from);
+                            PackageType responseType = ConnectionManager.this.sendPackage(to, pack);
+                            sendResponse(responseType);
+                            break;
 
-                            case REQ_SEARCH:
-                                //TODO search request
-                                Login[] searchAnswer = null; //searchForLogin(pack.getLogin());
-                                sendResponse(searchAnswer);
-                                break;
+                        case REQ_SEARCH:
+                            //TODO search request
+                            Login[] searchAnswer = null; //searchForLogin(pack.getLogin());
+                            sendResponse(searchAnswer);
+                            break;
 
-                            default:
-                                System.out.println("Bad type of request");
-                        }
+                        case REQ_SIGN_OUT:
+                            delConnectionFromMap(login);
+                            login = null;
+                            sendResponse(PackageType.RESP_SIGN_OUT_OK);
+                            break;
 
+                        default:
+                            sendResponse(PackageType.RESP_SIGN_IN_FAILED);
                     }
-                } catch (AuthenticationException e) {
-                    System.out.println(e.getMessage());
+                }
+
+            }
+
+            void doAuth() {
+                Login packLogin = currentPackage.getLogin();
+                Pass packPass = currentPackage.getPass();
+                switch (currentPackage.getType()) {
+                    case REQ_SIGN_IN:
+                        //check pass and login
+                        boolean match;
+                        try {
+                            match = databaseManager.isUserExists(new User(packLogin, packPass));
+                        } catch (Exception e) {
+                            e.printStackTrace(); //smth wrong with database
+                            sendResponse(PackageType.RESP_SERVER_ERROR);
+                            return;
+                        }
+                        if (match) {
+                            login = packLogin; //set connection login
+                            addConnectionToMap(packLogin, Connection.this);
+                            sendResponse(PackageType.RESP_SIGN_IN_OK);
+
+                            try {
+                                List<Package> messageQueue = databaseManager.getPackageListForUser(packLogin);
+                                for (Package entry : messageQueue) {
+                                    sendPackage(entry);
+                                }
+                            } catch (Exception e) {
+                                sendResponse(PackageType.RESP_SERVER_ERROR);
+                            }
+                        } else {
+                            sendResponse(PackageType.RESP_SIGN_IN_FAILED);
+                        }
+                        break;
+
+                    case REQ_SIGN_UP:
+                        //login and pass filer (length >= 6, etc )
+                        if (!isCorrectLogin(packLogin)) {
+                            sendResponse(PackageType.RESP_SIGN_UP_LOGIN_FILTER_FAILED);
+                            return;
+                        }
+                        if (!isCorrectPass(packPass)) {
+                            sendResponse(PackageType.RESP_SIGN_UP_PASS_FILTER_FAILED);
+                        }
+                        boolean exist;
+                        try {
+                            exist = databaseManager.isUserExists(packLogin);
+                        } catch (Exception e) {
+                            sendResponse(PackageType.RESP_SERVER_ERROR);
+                            return;
+                        }
+                        if (!exist) {
+                            try {
+                                databaseManager.addUser(new User(packLogin, packPass));
+                                sendResponse(PackageType.RESP_SIGN_UP_OK);
+                            } catch (Exception e) {
+                                sendResponse(PackageType.RESP_SERVER_ERROR);
+                            }
+                        } else {
+                            sendResponse(PackageType.RESP_SIGN_UP_USER_ALREADY_EXIST);
+                        }
+                        break;
+
+                    default:
+                        sendResponse(PackageType.RESP_SIGN_IN_FAILED);
                 }
             }
 
-            void doAuth() throws AuthenticationException {
-                if (currentPackage.getType() == PackageType.REQ_AUTH) {
-                    Login packLogin = currentPackage.getLogin();
-                    Pass packPass = currentPackage.getPass();
+            boolean isCorrectLogin(Login login) {
+                return true; //TODO
+            }
 
-                    //check pass and login
-                    //Обращение к базе (1)
-                    boolean match;
-                    try {
-                        match = databaseManager.isUserExists(new User(packLogin, packPass));
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                        sendResponse(PackageType.RESP_AUTH_FAILED);
-                        return;
-                    }
-                    if (match) {
-                        login = packLogin; //set connection login
-                        addConnectionToMap(packLogin, Connection.this);
-                        sendResponse(PackageType.RESP_AUTH_OK);
-
-                        //TODO Дима, посмотри сюда
-                        //Обращение к базе (2)
-                        try {
-                            List<Package> messageQueue = databaseManager.getPackageListForUser(packLogin);
-                            for (Package entry : messageQueue) {
-                                sendPackage(entry);
-                            }
-                        } catch (Throwable t) {
-                            System.out.println("Something went wrong");
-                        }
-
-
-                    } else {
-                        sendResponse(PackageType.RESP_AUTH_FAILED);
-                    }
-                } else {
-                    sendResponse(PackageType.RESP_AUTH_FAILED);
-                    throw new AuthenticationException("Expected AUTH REQUEST");
-                }
+            boolean isCorrectPass(Pass pass) {
+                return true; //TODO
             }
 
         }
+
+
     }
+
+
 }
