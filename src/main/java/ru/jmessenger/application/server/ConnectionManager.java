@@ -36,6 +36,13 @@ public class ConnectionManager extends Thread {
     ConnectionManager(int port) {
         this.PORT = port;
         this.databaseManager = new DatabaseManager();
+        try {
+            databaseManager.addUser(new User("dima","12345"));
+            databaseManager.addUser(new User("bob","12345"));
+            databaseManager.addUser(new User("alice","12345"));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         connections = new HashMap<>();
         try {
             serverSocketFactory = getSocketFactory();
@@ -63,6 +70,10 @@ public class ConnectionManager extends Thread {
         }
     }
 
+    synchronized private void delConnectionFromMap(Login login) {
+        connections.remove(login);
+    }
+
     //send pack and return type of response
     private PackageType sendPackage(Login to, Package pack) {
         Connection connection = connections.get(to);
@@ -75,12 +86,21 @@ public class ConnectionManager extends Thread {
                 databaseManager.addPackage(to, pack);
                 return PackageType.RESP_MESSAGE_IN_QUEUE;
             }
-        } else if (databaseManager.isUserExists(to)) {
-            //System.out.println(e.getMessage());
-            databaseManager.addPackage(to, pack);
-            return PackageType.RESP_MESSAGE_IN_QUEUE;
         } else {
-            return PackageType.RESP_MESSAGE_USER_NOT_FOUND;
+            boolean exist;
+            try {
+                exist = databaseManager.isUserExists(to);
+            } catch (Exception e) {
+                System.out.println(e.getMessage());
+                return PackageType.RESP_MESSAGE_USER_NOT_FOUND;
+            }
+            if (exist) {
+                //System.out.println(e.getMessage());
+                databaseManager.addPackage(to, pack);
+                return PackageType.RESP_MESSAGE_IN_QUEUE;
+            } else {
+                return PackageType.RESP_MESSAGE_USER_NOT_FOUND;
+            }
         }
     }
 
@@ -190,6 +210,9 @@ public class ConnectionManager extends Thread {
         void closeConnection() {
             try {
                 socket.close();
+                if (isAuthorized()) {
+                    delConnectionFromMap(login);
+                }
             } catch (IOException e) {
                 System.out.println("failed to close connection");
             }
@@ -245,7 +268,14 @@ public class ConnectionManager extends Thread {
 
                     //check pass and login
                     //Обращение к базе (1)
-                    boolean match = databaseManager.isUserExists(new User (packLogin,packPass));
+                    boolean match;
+                    try {
+                        match = databaseManager.isUserExists(new User(packLogin, packPass));
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        sendResponse(PackageType.RESP_AUTH_FAILED);
+                        return;
+                    }
                     if (match) {
                         login = packLogin; //set connection login
                         addConnectionToMap(packLogin, Connection.this);

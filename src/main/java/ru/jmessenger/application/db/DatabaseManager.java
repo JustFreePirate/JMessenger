@@ -20,7 +20,7 @@ public class DatabaseManager {
     static final String JDBC_DRIVER = "com.mysql.jdbc.Driver";
     static final String DB_URL = "jdbc:mysql://localhost:3306/my_db";
     static final String USER = "admin";
-    static final String PASS = "admind";
+    static final String PASS = "admin";
 
     static final String USER_TABLE = "users";
     static final String PACKAGE_TABLE = "packages";
@@ -31,7 +31,7 @@ public class DatabaseManager {
         public final String message;
         public final byte[] file;
 
-        Pack () {
+        Pack() {
             this.date = null;
             this.file = null;
             this.login = null;
@@ -40,29 +40,30 @@ public class DatabaseManager {
     }
 
     private static Sql2o sql2o;
+
     static {
         sql2o = new Sql2o(DB_URL, USER, PASS);
     }
 
-    public DatabaseManager(){
+    public DatabaseManager() {
         try {
             Class.forName(JDBC_DRIVER).newInstance();
         } catch (Throwable t) {
             throw new RuntimeException("Error in Class.forName(JDBC_DRIVER).newInstance();");
         }
 
-        if(!isTableExists(USER_TABLE)){
+        if (!isTableExists(USER_TABLE)) {
             createUsersTable();
         }
-        if(!isTableExists(PACKAGE_TABLE)){
+        if (!isTableExists(PACKAGE_TABLE)) {
             createPackagesTable();
         }
 
     }
 
-    private boolean isTableExists(String tableName){
-        final String request =  "SELECT 1 FROM `" + tableName + "` LIMIT 1;";
-        try(Connection con = sql2o.beginTransaction()) {
+    private boolean isTableExists(String tableName) {
+        final String request = "SELECT 1 FROM `" + tableName + "` LIMIT 1;";
+        try (Connection con = sql2o.beginTransaction()) {
             Object t = con.createQuery(request).executeScalar();
         } catch (Throwable t) {
             return false;
@@ -70,7 +71,7 @@ public class DatabaseManager {
         return true;
     }
 
-    private void createUsersTable () {
+    private void createUsersTable() {
         final String createTable =
                 "CREATE TABLE\n" +
                         "    `" + USER_TABLE + "` (\n" +
@@ -80,13 +81,14 @@ public class DatabaseManager {
                         "         PRIMARY KEY(`user_id`)\n" +
                         "    );";
 
-        try(Connection con = sql2o.beginTransaction()) {
+        try (Connection con = sql2o.beginTransaction()) {
             con.createQuery(createTable).executeUpdate();
             con.commit();
-        } catch (Throwable t) {}
+        } catch (Throwable t) {
+        }
     }
 
-    private void createPackagesTable () {
+    private void createPackagesTable() {
         final String createTable =
                 "CREATE TABLE\n" +
                         "    `" + PACKAGE_TABLE + "` (\n" +
@@ -99,13 +101,14 @@ public class DatabaseManager {
                         "        FOREIGN KEY (sender_id) REFERENCES users(user_id)\n" +
                         "    );";
 
-        try(Connection con = sql2o.beginTransaction()) {
+        try (Connection con = sql2o.beginTransaction()) {
             con.createQuery(createTable).executeUpdate();
             con.commit();
-        } catch (Throwable t) {}
+        } catch (Throwable t) {
+        }
     }
 
-    public void addPackage (Login login, Package aPackage){
+    public void addPackage(Login login, Package aPackage) {
         //Не знаю почему, но похоже, что login это recipient,
         //А aPackage.getLogin() -- sender
 
@@ -128,7 +131,7 @@ public class DatabaseManager {
                 .addParameter("userLogin", aPackage.getLogin().toString())
                 .executeScalar();
 
-        try(Connection con = sql2o.beginTransaction()) {
+        try (Connection con = sql2o.beginTransaction()) {
             con.createQuery(insertPackage)
                     .addParameter("sender_id", senderId)
                     .addParameter("recipient_id", recipientId)
@@ -140,14 +143,14 @@ public class DatabaseManager {
         }
     }
 
-    public void addUser (User user){
+    public void addUser(User user) {
         final String insertPerson =
                 "INSERT INTO\n" +
                         "    `users` (`login`, `hash_pass`)\n" +
                         "VALUES\n" +
                         "    (:loginParam, :hashPassParam);";
 
-        try(Connection con = sql2o.beginTransaction()) {
+        try (Connection con = sql2o.beginTransaction()) {
             con.createQuery(insertPerson)
                     .addParameter("loginParam", user.getLogin())
                     .addParameter("hashPassParam", user.getHashPass())
@@ -156,7 +159,7 @@ public class DatabaseManager {
         }
     }
 
-    public void updateUser (User user){
+    public void updateUser(User user) {
         final String updateUser =
                 "UPDATE users " +
                         "SET    hash_pass = :hashPassParam " +
@@ -187,28 +190,25 @@ public class DatabaseManager {
 //        return isUserExists(user);
 //    }
 
-    public boolean isUserExists (User user)  throws Exception  {
+    public boolean isUserExists(User user) throws Exception {
         final String findUser =
                 "SELECT count(*) " +
                         "FROM users " +
-                        "WHERE login = :loginParam AND hash_pass = :hashPassParam;" ;
-        try {
-            Long result = (Long) sql2o
-                    .createQuery(findUser)
-                    .addParameter("loginParam", user.getLogin())
-                    .addParameter("hashPassParam", user.getHashPass())
-                    .executeScalar();
-            return result > 0;
-        } catch (Throwable e){
-            throw new Exception("Something went wrong in \"boolean isUserExists (User user)\"");
-        }
+                        "WHERE login = :loginParam AND hash_pass = :hashPassParam;";
+        Long result = (Long) sql2o
+                .createQuery(findUser)
+                .addParameter("loginParam", user.getLogin())
+                .addParameter("hashPassParam", user.getHashPass())
+                .executeScalar();
+        return result > 0;
 
     }
-    public boolean isUserExists (Login login) throws Exception {
+
+    public boolean isUserExists(Login login) throws Exception {
         final String findUser =
                 "SELECT count(*) " +
                         "FROM users " +
-                        "WHERE login = :loginParam;" ;
+                        "WHERE login = :loginParam;";
 
         try {
             Long result = (Long) sql2o
@@ -216,7 +216,7 @@ public class DatabaseManager {
                     .addParameter("loginParam", login.toString())
                     .executeScalar();
             return result > 0;
-        } catch (Throwable e){
+        } catch (Throwable e) {
             throw new Exception("Something went wrong in \"boolean isUserExists (Login login)\"");
         }
     }
@@ -229,7 +229,7 @@ public class DatabaseManager {
         //Date date = format.parse(string);
 
         //TODO Сделать настоящее время
-        for(Pack entry : list){
+        for (Pack entry : list) {
             result.add(new Package(entry.message, new Login(entry.login), new Date()));
         }
         return result;
@@ -256,12 +256,12 @@ public class DatabaseManager {
                         "WHERE recipient_id = (:idParam);";
 
         List<Pack> result = null;
-        try(Connection con = sql2o.open()) {
+        try (Connection con = sql2o.open()) {
             result =
                     con.createQuery(sql)
                             .addParameter("idParam", recipientId)
                             .executeAndFetch(Pack.class);
-        } catch (Throwable t){
+        } catch (Throwable t) {
             t.printStackTrace();
         }
 
@@ -269,7 +269,7 @@ public class DatabaseManager {
                 "DELETE FROM `" + PACKAGE_TABLE + "`" +
                         "WHERE recipient_id = :recipientIdParam;";
 
-        try(Connection con = sql2o.beginTransaction()) {
+        try (Connection con = sql2o.beginTransaction()) {
             con.createQuery(sqlDelete)
                     .addParameter("recipientIdParam", recipientId)
                     .executeUpdate();
