@@ -52,7 +52,7 @@ public class Package implements Serializable {
 
     //create message-package from DB
     public Package(String message, Login recipientLogin, Date date) {
-        this(PackageType.REQ_SEND_MESSAGE, recipientLogin, null, message, null, new Date());
+        this(PackageType.REQ_SEND_MESSAGE, recipientLogin, null, message, null, date);
     }
 
     private Package(PackageType type, Login login, Pass pass, String message, byte[] file, Date date) {
