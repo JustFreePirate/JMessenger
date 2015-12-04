@@ -13,15 +13,12 @@ import java.io.OutputStreamWriter;
  */
 public class Sender {
     private OutputStream outputStream;
-    //private OutputStreamWriter outputStreamWriter;
 
-    public Sender (SSLSocket sslSocket) {
+    public Sender(SSLSocket sslSocket) {
         try {
             outputStream = sslSocket.getOutputStream();
-            //outputStreamWriter = new OutputStreamWriter(outputStream);
-        }
-        catch (Exception e) {
-            //
+        } catch (Exception exception) {
+            exception.printStackTrace();
         }
     }
 

@@ -11,7 +11,9 @@ import java.text.SimpleDateFormat;
 /**
  * Created by Сергей on 04.12.2015.
  */
-public class Listener {
+public class Listener implements Runnable {
+
+    private Thread thread;
     private static final int BUFF_LEN = 1024 * 5;
     private InputStream inputStream;
     private PackageService packageService;
@@ -19,20 +21,22 @@ public class Listener {
     public Listener(SSLSocket sslSocket){
         try {
             inputStream = sslSocket.getInputStream();
+
+        } catch (Exception exception) {
+            exception.printStackTrace();
         }
-        catch (Exception e) {
-            //
-        }
+
         packageService = new PackageService();
+        thread = new Thread(this, "ListenerThread");
+        thread.start();
     }
 
-    public void start() {
+    public void run() {
         listen();
     }
 
     private void listen() {
         try {
-
             byte[] buf = new byte[BUFF_LEN];
             int r = 0;
             String request;

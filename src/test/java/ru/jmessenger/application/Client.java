@@ -36,18 +36,12 @@ public class Client {
         sslSocket.setSoTimeout(TIMEOUT); //ждем ответа TIMEOUT миллисек
 
         sender = new Sender(sslSocket);
-        listener = new Listener(sslSocket);
+
+        //В отдельном потоке принимаем пакеты
+        new Listener(sslSocket);
     }
 
     public void start() throws Exception {
-
-        //В отдельном потоке принимаем пакеты
-        Thread t = new Thread(new Runnable() {
-            public void run() {
-                listener.start();
-            }
-        });
-        t.start();
 
         Scanner scanner = new Scanner(System.in);
         String str;
