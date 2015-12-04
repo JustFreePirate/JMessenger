@@ -3,9 +3,11 @@ package ru.jmessenger.application;
 import java.io.*;
 import java.net.SocketTimeoutException;
 import java.security.KeyStore;
+import java.security.Security;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Scanner;
 
 import ru.jmessenger.application.common.*;
