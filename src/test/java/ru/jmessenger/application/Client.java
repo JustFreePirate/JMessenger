@@ -22,29 +22,29 @@ public class Client {
     private static String tsName = "src/res/client_key_store.jks";
     private static String ServerCrtName = "src/res/server.crt";
     private static final int TIMEOUT = 500;
-    private static final int BUFF_LEN = 1024 * 5;
     private static final int PORT = 3128;
-    InputStream is;
-    OutputStream os;
 
-    private PackageService packageService;
+    private Sender sender;
+    private Listener listener;
+
     private SSLSocketFactory socketFactory;
     private SSLSocket sslSocket;
 
     public Client() throws Exception {
         socketFactory = getSocketFactory();
         sslSocket = (SSLSocket) socketFactory.createSocket("localhost", PORT);
-        packageService = new PackageService();
         sslSocket.setSoTimeout(TIMEOUT); //ждем ответа TIMEOUT миллисек
-        is = sslSocket.getInputStream();
-        os = sslSocket.getOutputStream();
+
+        sender = new Sender(sslSocket);
+        listener = new Listener(sslSocket);
     }
 
     public void start() throws Exception {
 
+        //В отдельном потоке принимаем пакеты
         Thread t = new Thread(new Runnable() {
             public void run() {
-                listen();
+                listener.start();
             }
         });
         t.start();
@@ -62,24 +62,12 @@ public class Client {
                 continue;
             }
 
-            sendPackage(aPackage);
+            //Отправляем пакет
+            sender.sendPackage(aPackage);
         }
     }
 
     private Package stringToPackage(String str) throws Exception {
-        //Что тут происходит:
-        //Пользователь набирает команду, она парсится следующим образом:
-        //
-        //PackageType.REQ_SIGN_IN;
-        // Auth; Bob; 1234567890;
-        //
-        //Пусть FILE = MESSAGE
-        //PackageType.REQ_SEND_MESSAGE;
-        //PackageType.REQ_SEND_FILE;
-        //Send; Alice; Hello!;
-        //
-        //Пока что не будем
-        //PackageType.REQ_SEARCH;
 
         Scanner scanner = new Scanner(str).useDelimiter("; ");
 
@@ -124,67 +112,6 @@ public class Client {
         sslContext.init(null, trustManagers, null);
         return sslContext.getSocketFactory();
     }
-
-    private void sendPackage(Package aPackage) throws IOException {
-        byte[] serialized = aPackage.serialize();
-        System.out.println("length of package: " + serialized.length);
-        OutputStream outputstream = sslSocket.getOutputStream();
-        OutputStreamWriter outputstreamwriter = new OutputStreamWriter(outputstream);
-
-        outputstream.write(serialized, 0, serialized.length);
-        outputstream.flush();
-    }
-
-    private void listen() {
-        try {
-
-            byte[] buf = new byte[BUFF_LEN];
-            int r = 0;
-            String request;
-
-            while (true) {
-                try {
-                    if ((r = is.read(buf)) > 0) {
-                        try {
-                            Package receivedPack = Package.deserialize(buf);
-                            packageService.processPackage(receivedPack);
-                        } catch (Exception e) {
-                            System.out.println("failed to deserialize");
-                        }
-                    }
-                } catch (SocketTimeoutException e) {
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    class PackageService {
-        Package currentPackage;
-        SimpleDateFormat formatter;
-
-        PackageService() {
-            formatter = new SimpleDateFormat("HH:mm:ss dd.MM.yyyy");
-        }
-
-        //обрабатывает пришедший пакет
-        void processPackage(Package pack) {
-            currentPackage = pack;
-
-            PackageType packType = pack.getType();
-            switch (packType) {
-                case REQ_SEND_MESSAGE:
-                    System.out.println("From: " + pack.getLogin() + " " + formatter.format(pack.getDate()) +
-                            "\n" + "-> " + pack.getMessage());
-                    break;
-
-                default:
-                    System.out.println(packType.name());
-            }
-        }
-    }
-
 
     public static void main(String[] args) {
         try {
