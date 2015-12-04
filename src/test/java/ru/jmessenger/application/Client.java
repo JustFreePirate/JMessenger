@@ -39,6 +39,7 @@ public class Client {
 
     public void start() throws Exception {
 
+        //В отдельном потоке принимаем пакеты
         Thread t = new Thread(new Runnable() {
             public void run() {
                 listener.start();
@@ -59,7 +60,8 @@ public class Client {
                 continue;
             }
 
-            sendPackage(aPackage);
+            //Отправляем пакет
+            sender.sendPackage(aPackage);
         }
     }
 
@@ -107,16 +109,6 @@ public class Client {
         TrustManager[] trustManagers = tmf.getTrustManagers();
         sslContext.init(null, trustManagers, null);
         return sslContext.getSocketFactory();
-    }
-
-    private void sendPackage(Package aPackage) throws IOException {
-        byte[] serialized = aPackage.serialize();
-        System.out.println("length of package: " + serialized.length);
-        OutputStream outputstream = sslSocket.getOutputStream();
-        OutputStreamWriter outputstreamwriter = new OutputStreamWriter(outputstream);
-
-        outputstream.write(serialized, 0, serialized.length);
-        outputstream.flush();
     }
 
     public static void main(String[] args) {
