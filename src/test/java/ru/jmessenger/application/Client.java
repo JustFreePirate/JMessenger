@@ -7,6 +7,7 @@ import java.security.Security;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.text.SimpleDateFormat;
+import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Scanner;
 
@@ -20,9 +21,11 @@ import javax.net.ssl.*;
  */
 public class Client {
     private static String tsName = "src/res/client_key_store.jks";
-    private static String ServerCrtName = "src/res/server_bks.crt";
+    private static String ServerCrtName = "src/res/server.crt";
     private static final int TIMEOUT = 500;
     private static final int PORT = 3128;
+
+    private ArrayDeque<Package> arrayDeque;
 
     private Sender sender;
     private Listener listener;
@@ -31,14 +34,16 @@ public class Client {
     private SSLSocket sslSocket;
 
     public Client() throws Exception {
+
         socketFactory = getSocketFactory();
-        sslSocket = (SSLSocket) socketFactory.createSocket("192.168.1.193", PORT);
+        sslSocket = (SSLSocket) socketFactory.createSocket("localhost", PORT);
         sslSocket.setSoTimeout(TIMEOUT); //ждем ответа TIMEOUT миллисек
 
+        arrayDeque = new ArrayDeque<Package>();
         sender = new Sender(sslSocket);
 
         //В отдельном потоке принимаем пакеты
-        new Listener(sslSocket);
+        new Listener(sslSocket, arrayDeque );
     }
 
     public void start() throws Exception {
@@ -58,7 +63,17 @@ public class Client {
 
             //Отправляем пакет
             sender.sendPackage(aPackage);
+
         }
+
+        //never
+
+    }
+
+    public Package getPackage() {
+        Package pack =  arrayDeque.getFirst();
+        arrayDeque.removeFirst();
+        return  pack;
     }
 
     private Package stringToPackage(String str) throws Exception {
@@ -85,7 +100,7 @@ public class Client {
     }
 
     private static SSLSocketFactory getSocketFactory() throws Exception {
-        KeyStore ks = KeyStore.getInstance("BKS");
+        KeyStore ks = KeyStore.getInstance("JKS");
         try {
             FileInputStream trustStream = new FileInputStream(tsName);
             ks.load(trustStream, null);
