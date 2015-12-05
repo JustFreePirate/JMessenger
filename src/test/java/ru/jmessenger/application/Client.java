@@ -20,7 +20,7 @@ import javax.net.ssl.*;
  */
 public class Client {
     private static String tsName = "src/res/client_key_store.jks";
-    private static String ServerCrtName = "src/res/server.crt";
+    private static String ServerCrtName = "src/res/server_bks.crt";
     private static final int TIMEOUT = 500;
     private static final int PORT = 3128;
 
@@ -32,7 +32,7 @@ public class Client {
 
     public Client() throws Exception {
         socketFactory = getSocketFactory();
-        sslSocket = (SSLSocket) socketFactory.createSocket("localhost", PORT);
+        sslSocket = (SSLSocket) socketFactory.createSocket("192.168.1.193", PORT);
         sslSocket.setSoTimeout(TIMEOUT); //ждем ответа TIMEOUT миллисек
 
         sender = new Sender(sslSocket);
@@ -85,7 +85,7 @@ public class Client {
     }
 
     private static SSLSocketFactory getSocketFactory() throws Exception {
-        KeyStore ks = KeyStore.getInstance("JKS");
+        KeyStore ks = KeyStore.getInstance("BKS");
         try {
             FileInputStream trustStream = new FileInputStream(tsName);
             ks.load(trustStream, null);
