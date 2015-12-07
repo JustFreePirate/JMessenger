@@ -10,6 +10,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Scanner;
+import java.net.*;
 
 import ru.jmessenger.application.common.*;
 import ru.jmessenger.application.common.Package;
@@ -20,8 +21,6 @@ import javax.net.ssl.*;
  * Created by Сергей on 20.11.2015.
  */
 public class Client {
-    private static String tsName = "src/res/client_key_store.jks";
-    private static String ServerCrtName = "src/res/server.crt";
     private static final int TIMEOUT = 500;
     private static final int PORT = 3128;
 
@@ -30,20 +29,18 @@ public class Client {
     private Sender sender;
     private Listener listener;
 
-    private SSLSocketFactory socketFactory;
-    private SSLSocket sslSocket;
+    private Socket socket;
 
     public Client() throws Exception {
 
-        socketFactory = getSocketFactory();
-        sslSocket = (SSLSocket) socketFactory.createSocket("localhost", PORT);
-        sslSocket.setSoTimeout(TIMEOUT); //ждем ответа TIMEOUT миллисек
+        socket = new Socket("localhost", PORT);
+        socket.setSoTimeout(TIMEOUT); //ждем ответа TIMEOUT миллисек
 
         arrayDeque = new ArrayDeque<Package>();
-        sender = new Sender(sslSocket);
+        sender = new Sender(socket);
 
         //В отдельном потоке принимаем пакеты
-        new Listener(sslSocket, arrayDeque );
+        new Listener(socket, arrayDeque );
     }
 
     public void start() throws Exception {
@@ -63,7 +60,9 @@ public class Client {
 
             //Отправляем пакет
             sender.sendPackage(aPackage);
-
+            if(!arrayDeque.isEmpty()){
+                System.out.println(this.getPackage().getType().toString());
+            }
         }
 
         //never
@@ -99,28 +98,6 @@ public class Client {
         }
     }
 
-    private static SSLSocketFactory getSocketFactory() throws Exception {
-        KeyStore ks = KeyStore.getInstance("JKS");
-        try {
-            FileInputStream trustStream = new FileInputStream(tsName);
-            ks.load(trustStream, null);
-        } catch (FileNotFoundException e) {
-            CertificateFactory crtFactory = CertificateFactory.getInstance("X.509");
-            Certificate cert = crtFactory.generateCertificate(new FileInputStream(ServerCrtName));
-            ks.load(null, null);
-            ks.setCertificateEntry("server_cert", cert);
-            FileOutputStream fos = new FileOutputStream(tsName);
-            ks.store(fos, "123456".toCharArray());
-            fos.close();
-        }
-
-        TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
-        tmf.init(ks);
-        SSLContext sslContext = SSLContext.getInstance("TLS");
-        TrustManager[] trustManagers = tmf.getTrustManagers();
-        sslContext.init(null, trustManagers, null);
-        return sslContext.getSocketFactory();
-    }
 
     public static void main(String[] args) {
         try {
