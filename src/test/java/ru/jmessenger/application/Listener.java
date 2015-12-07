@@ -8,6 +8,7 @@ import java.io.InputStream;
 import java.net.SocketTimeoutException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayDeque;
+import java.net.*;
 
 /**
  * Created by Сергей on 04.12.2015.
@@ -20,9 +21,9 @@ public class Listener implements Runnable {
 
     private ArrayDeque<Package> arrayDeque;
 
-    public Listener(SSLSocket sslSocket, ArrayDeque<Package> arrayDeque){
+    public Listener(Socket socket, ArrayDeque<Package> arrayDeque){
         try {
-            inputStream = sslSocket.getInputStream();
+            inputStream = socket.getInputStream();
 
         } catch (Exception exception) {
             exception.printStackTrace();
