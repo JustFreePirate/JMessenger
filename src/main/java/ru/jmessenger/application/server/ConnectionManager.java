@@ -4,6 +4,7 @@ import ru.jmessenger.application.common.*;
 import ru.jmessenger.application.common.Package;
 import ru.jmessenger.application.db.DatabaseManager;
 
+import javax.net.ServerSocketFactory;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLServerSocketFactory;
@@ -25,9 +26,9 @@ public class ConnectionManager extends Thread {
     private static final int TIMEOUT = 500;
     public static final int BUFF_LEN = 1024 * 5;
     private HashMap<Login, Connection> connections;
-    private SSLServerSocketFactory serverSocketFactory;
-    private static String ksName = "src/res/server_key_store.jks";
-    private static char[] crtPass = "free240195".toCharArray();
+    private ServerSocketFactory serverSocketFactory;
+    //private static String ksName = "src/res/server_key_store.jks";
+    //private static char[] crtPass = "free240195".toCharArray();
     private static DatabaseManager databaseManager;
 
 
@@ -43,15 +44,8 @@ public class ConnectionManager extends Thread {
         setPriority(NORM_PRIORITY);
     }
 
-    private SSLServerSocketFactory getSocketFactory() throws Exception {
-        KeyStore ks = KeyStore.getInstance("BKS");
-        ks.load(new FileInputStream(ksName), null);
-        KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
-        kmf.init(ks, crtPass);
-        SSLContext sslContext = SSLContext.getInstance("TLS");
-        sslContext.init(kmf.getKeyManagers(), null, null);
-
-        return sslContext.getServerSocketFactory();
+    private ServerSocketFactory getSocketFactory() throws Exception {
+        return ServerSocketFactory.getDefault();
     }
 
     synchronized private void addConnectionToMap(Login login, Connection connection) {
@@ -323,11 +317,6 @@ public class ConnectionManager extends Thread {
             boolean isCorrectPass(Pass pass) {
                 return true; //TODO
             }
-
         }
-
-
     }
-
-
 }
