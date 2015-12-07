@@ -7,14 +7,16 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.net.*;
 
 /**
  * Created by Сергей on 04.12.2015.
  */
+
 public class Sender {
     private OutputStream outputStream;
 
-    public Sender(SSLSocket sslSocket) {
+    public Sender(Socket sslSocket) {
         try {
             outputStream = sslSocket.getOutputStream();
         } catch (Exception exception) {
