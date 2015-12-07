@@ -40,7 +40,8 @@ public class Client {
         sender = new Sender(socket);
 
         //В отдельном потоке принимаем пакеты
-        new Listener(socket, arrayDeque );
+        new Listener(socket, arrayDeque);
+        new PackageService(arrayDeque);
     }
 
     public void start() throws Exception {
@@ -60,13 +61,12 @@ public class Client {
 
             //Отправляем пакет
             sender.sendPackage(aPackage);
-            if(!arrayDeque.isEmpty()){
-                System.out.println(this.getPackage().getType().toString());
-            }
+
+//Для Миши
+//            if(!arrayDeque.isEmpty()){
+//                System.out.println(this.getPackage().getType().toString());
+//            }
         }
-
-        //never
-
     }
 
     public Package getPackage() {
