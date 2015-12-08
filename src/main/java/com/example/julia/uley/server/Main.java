@@ -1,4 +1,4 @@
-package ru.jmessenger.application.server;
+package com.example.julia.uley.server;
 
 /**
  * Created by Dima on 17.10.2015.

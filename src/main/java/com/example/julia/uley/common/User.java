@@ -1,4 +1,4 @@
-package ru.jmessenger.application.common;
+package com.example.julia.uley.common;
 
 /**
  * Created by Сергей on 21.11.15.

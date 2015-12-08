@@ -1,4 +1,4 @@
-package ru.jmessenger.application.db;
+package com.example.julia.uley.db;
 
 import org.hamcrest.CoreMatchers;
 import org.hamcrest.MatcherAssert;

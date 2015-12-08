@@ -1,9 +1,9 @@
-package ru.jmessenger.application.common;
+package com.example.julia.uley.common;
 
 import java.io.Serializable;
 
 /**
- * Created by dima on 17.11.15.
+ * Created by Julia on 23.11.2015.
  */
 public class Pass implements Serializable {
     public Pass(String pass) {
@@ -18,5 +18,5 @@ public class Pass implements Serializable {
         this.pass = pass;
     }
 
-    String pass;
+    private String pass;
 }

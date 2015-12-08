@@ -1,8 +1,8 @@
-package ru.jmessenger.application.server;
+package com.example.julia.uley.server;
 
-import ru.jmessenger.application.common.*;
-import ru.jmessenger.application.common.Package;
-import ru.jmessenger.application.db.DatabaseManager;
+import com.example.julia.uley.common.*;
+import com.example.julia.uley.common.Package;
+import com.example.julia.uley.db.DatabaseManager;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
@@ -66,7 +66,7 @@ public class ConnectionManager extends Thread {
     }
 
     //send pack and return type of response
-    private PackageType sendPackage(Login to, Package pack) {
+    private PackageType sendPackage(Login to, com.example.julia.uley.common.Package pack) {
         Connection connection = connections.get(to);
         if (connection != null) {
             try {
@@ -150,7 +150,9 @@ public class ConnectionManager extends Thread {
                             try {
                                 receivedPack = Package.deserialize(buf);
                             } catch (Exception e) {
-                                System.out.println("failed to deserialize");
+                                e.printStackTrace();
+                                System.out.println("failed to deserialize1" +
+                                        " len = " + r);
                                 continue;
                             }
                             packageService.processPackage(receivedPack);
@@ -163,7 +165,7 @@ public class ConnectionManager extends Thread {
                     }
                 }
             } catch (Exception e) {
-                //e.printStackTrace();
+                e.printStackTrace();
                 closeConnection();
             }
         }
@@ -174,6 +176,12 @@ public class ConnectionManager extends Thread {
 
         synchronized void sendPackage(Package aPackage) throws IOException {
             byte[] serialized = aPackage.serialize();
+            System.out.println("Package sended: \n" +
+                    "PackType: " + aPackage.getType() + "\n" +
+                    "Message: " + aPackage.getMessage() + "\n" +
+                    "Pass: " + aPackage.getPass() + "\n" +
+                    "File: " + aPackage.getFile() + "\n" +
+                    "Date: " + aPackage.getDate() + "\n");
             OutputStream os = socket.getOutputStream();
             os.write(serialized, 0, serialized.length);
             os.flush();

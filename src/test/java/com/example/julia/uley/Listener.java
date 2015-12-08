@@ -1,13 +1,12 @@
-package ru.jmessenger.application;
+package com.example.julia.uley;
 
-import ru.jmessenger.application.common.*;
-import ru.jmessenger.application.common.Package;
+import com.example.julia.uley.common.Package;
 
 import javax.net.ssl.SSLSocket;
 import java.io.InputStream;
 import java.net.SocketTimeoutException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayDeque;
+import java.util.concurrent.ConcurrentLinkedDeque;
 
 /**
  * Created by Сергей on 04.12.2015.
@@ -18,9 +17,9 @@ public class Listener implements Runnable {
     private InputStream inputStream;
     //private PackageService packageService;
 
-    private ArrayDeque<Package> arrayDeque;
+    private ConcurrentLinkedDeque<Package> arrayDeque;
 
-    public Listener(SSLSocket sslSocket, ArrayDeque<Package> arrayDeque){
+    public Listener(SSLSocket sslSocket, ConcurrentLinkedDeque<Package> arrayDeque){
         try {
             inputStream = sslSocket.getInputStream();
 
@@ -51,7 +50,7 @@ public class Listener implements Runnable {
                     if ((r = inputStream.read(buf)) > 0) {
                         try {
                             //System.out.println("eee");
-                            ru.jmessenger.application.common.Package receivedPack = Package.deserialize(buf);
+                            Package receivedPack = Package.deserialize(buf);
                             //packageService.processPackage(receivedPack);
                             arrayDeque.add(receivedPack);
                         } catch (Exception e) {

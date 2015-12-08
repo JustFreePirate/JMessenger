@@ -1,16 +1,14 @@
-package ru.jmessenger.application.db;
+package com.example.julia.uley.db;
 
+import com.example.julia.uley.common.Login;
+import com.example.julia.uley.common.User;
 import org.sql2o.Connection;
 import org.sql2o.Sql2o;
-import ru.jmessenger.application.common.*;
-import ru.jmessenger.application.common.Package;
+import com.example.julia.uley.common.Package;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Locale;
 
 /**
  * Created by Сергей on 15.11.2015.
