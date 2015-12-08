@@ -16,8 +16,7 @@ import com.example.julia.uley.common.Login;
 import com.example.julia.uley.common.Package;
 import com.example.julia.uley.common.PackageType;
 import com.example.julia.uley.common.Pass;
-
-import java.io.IOException;
+import com.example.julia.uley.manager.ListenerManager;
 
 /**
  * Created by Михаил on 29.11.2015.
@@ -72,19 +71,8 @@ public class SignUpActivity extends AppCompatActivity {
                         Pass pass = new Pass(password);
                         //TODO: CHECK
                         Package signUpPackage = new Package(PackageType.REQ_SIGN_UP, login, pass);
-                        //Client client = new Client(context);
-                        //client.start(signUpPackage);
-                        if (client.getPackageResp().getType() == PackageType.RESP_SIGN_UP_USER_ALREADY_EXIST) {
-                            mEmailView.setError(getString(R.string.error_user_already_exist));
-                            focusView = mEmailView;
-                            focusView.requestFocus();
-                        }
-                        if (client.getPackageResp().getType() == PackageType.RESP_SIGN_UP_PASS_FILTER_FAILED ||
-                                client.getPackageResp().getType() == PackageType.RESP_SIGN_UP_LOGIN_FILTER_FAILED) {
-                            mEmailView.setError(getString(R.string.error_log_pass_filter));
-                            focusView = mEmailView;
-                            focusView.requestFocus();
-                        }
+                        SignUpTask signUpTask = new SignUpTask();
+                        signUpTask.execute(signUpPackage);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -102,16 +90,19 @@ public class SignUpActivity extends AppCompatActivity {
 
         @Override
         protected Package doInBackground(Package... params) {
+            Package tempPackage = null;
             try {
                 //TODO: CHECK
                 Package signUpPackage = params[0];
                 Client client = new Client(context);
                 client.send(signUpPackage);
+                ListenerManager listenerManager = new ListenerManager(client);
+                tempPackage = listenerManager.listenerManager();
 
             } catch (Exception e) {
                 e.printStackTrace();
             }
-            return null;
+            return tempPackage;
         }
 
         @Override
@@ -130,12 +121,9 @@ public class SignUpActivity extends AppCompatActivity {
             }
             if (client.getPackageResp().getType() == PackageType.RESP_SIGN_UP_OK) {
                 Intent intent = new Intent(SignUpActivity.this, DialogsActivity.class);
-                try {
-                    intent.putExtra("client",client.serialize());
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                //TODO: Mby doing somethings
+                intent.putExtra("client",client);
+                startActivity(intent);
+                //TODO: Mby doing something
             }
         }
     }

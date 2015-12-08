@@ -45,18 +45,15 @@ public class Client implements Serializable {
 
     public Client(Context context) throws Exception {
         this.context = context;
-        System.out.println("kek1");
         socketFactory = getSocketFactory();
-        System.out.println("kek13");
 
 
-        sslSocket = (SSLSocket) socketFactory.createSocket("172.20.15.174", PORT);
+        sslSocket = (SSLSocket) socketFactory.createSocket("92.42.31.144", PORT);
         sslSocket.setSoTimeout(TIMEOUT); //ждем ответа TIMEOUT миллисек
-        System.out.println("kek2");
         //не тестили
         arrayDequeResp = new ArrayDeque<Package>();
         arrayDequeReq = new ArrayDeque<Package>();
-        //не тестили //TODO
+        //не тестили
         new Listener(sslSocket, arrayDequeResp, arrayDequeReq);
         sender = new Sender(sslSocket);
 
@@ -100,37 +97,6 @@ public class Client implements Serializable {
         return pack;
     }
 
-//    public Package getPackage() {
-//        if(arrayDeque.isEmpty()) return null;
-//
-//        Package pack =  arrayDeque.getFirst();
-//        arrayDeque.removeFirst();
-//        return  pack;
-//    }
-
-//    private Package stringToPackage(String str) throws Exception {
-//
-//        Scanner scanner = new Scanner(str).useDelimiter("; ");
-//
-//        String command = scanner.next();
-//        String login = scanner.next();
-//        String passOrMessage = scanner.next();
-//
-//
-//        switch (command) {
-//            case "sign in":
-//                return new Package(PackageType.REQ_SIGN_IN, new Login(login), new Pass(passOrMessage));
-//            case "sign up":
-//                return new Package(PackageType.REQ_SIGN_UP, new Login(login), new Pass(passOrMessage));
-//            case "sign out":
-//                return new Package(PackageType.REQ_SIGN_OUT);
-//            case "send":
-//                return new Package(passOrMessage, new Login(login));
-//            default:
-//                throw new Exception();
-//        }
-//    }
-
     private static SSLSocketFactory getSocketFactory() throws Exception {
         KeyStore ks = KeyStore.getInstance("BKS");
         AssetManager am = context.getAssets();
@@ -142,7 +108,6 @@ public class Client implements Serializable {
             CertificateFactory crtFactory = CertificateFactory.getInstance("X.509");
             System.out.println("crt ok" + crtFactory.toString());
             InputStream is = am.open("");
-            System.out.println("KekEKEKE");
             System.out.println(is.toString());
             Certificate cert = crtFactory.generateCertificate(is);
             ks.load(null, null);

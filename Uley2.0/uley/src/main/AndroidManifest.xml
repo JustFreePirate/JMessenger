@@ -17,8 +17,13 @@
             android:name=".activity.FullscreenActivity"
             android:configChanges="orientation|keyboardHidden|screenSize"
             android:label="@string/app_name"></activity>
-        <activity android:name=".activity.NewSignInActivity">
 
+        <activity android:name=".activity.NewSignInActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
 
 
         </activity>
@@ -36,11 +41,7 @@
         <activity
             android:name=".activity.ChatActivity"
             android:parentActivityName=".activity.DialogsActivity">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
 
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
         </activity>
 
         <provider
@@ -54,6 +55,7 @@
 
         </activity>
         <activity android:name=".activity.SignUpActivity">
+
 
         </activity>
     </application>

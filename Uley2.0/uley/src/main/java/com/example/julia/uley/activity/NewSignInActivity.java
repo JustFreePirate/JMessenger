@@ -2,6 +2,7 @@ package com.example.julia.uley.activity;
 
 import android.content.Context;
 import android.content.Intent;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
@@ -36,11 +37,6 @@ public class NewSignInActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         context = getApplicationContext();
-        try {
-            setClient(NewSignInActivity.this);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
         setContentView(R.layout.activity_sign_in);
         // Set up the login form.
         mEmailView = (AutoCompleteTextView) findViewById(R.id.email);
@@ -58,18 +54,8 @@ public class NewSignInActivity extends AppCompatActivity {
                     email = email.trim();
                     String password = mPasswordView.getText().toString();
                     Package signInPackage = new Package(PackageType.REQ_SIGN_IN, new Login(email), new Pass(password));
-                    //Client client = new Client(NewSignInActivity.this);
-                    ListenerManager listenerManager = new ListenerManager(client);
-                    //client.send(signInPackage);
-                    Package tempPackage = listenerManager.listenerManager();
-                    if (tempPackage.getType() == PackageType.RESP_SIGN_IN_FAILED) {
-                        Toast.makeText(getBaseContext(), "Sign in failed", Toast.LENGTH_LONG).show();
-                    }
-                    if (tempPackage.getType() == PackageType.RESP_SIGN_IN_OK) {
-                        Intent intent = new Intent(NewSignInActivity.this, DialogsActivity.class);
-                        intent.putExtra("client", client);
-                        startActivity(intent);
-                    }
+                    SignInTask signInTask = new SignInTask();
+                    signInTask.execute(signInPackage);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -87,6 +73,42 @@ public class NewSignInActivity extends AppCompatActivity {
                 startActivity(i);
             }
         });
+    }
+
+    private class SignInTask extends AsyncTask<Package, Void, Package>{
+
+        @Override
+        protected Package doInBackground(Package... params) {
+            try {
+                client = new Client(context);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            try {
+                client.send(params[0]);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            ListenerManager listenerManager = new ListenerManager(client);
+            Package tempPackage = listenerManager.listenerManager();
+            return tempPackage;
+        }
+
+        @Override
+        protected void onPostExecute(Package result){
+            Package tempPackage = result;
+            if (tempPackage.getType() == PackageType.RESP_SIGN_IN_FAILED) {
+                Toast.makeText(getBaseContext(), "Sign in failed", Toast.LENGTH_LONG).show();
+                System.out.println("Sign in failed");
+            }
+            if (tempPackage.getType() == PackageType.RESP_SIGN_IN_OK) {
+                Intent intent = new Intent(NewSignInActivity.this, DialogsActivity.class);
+                intent.putExtra("client", client);
+                //startActivity(intent);
+                System.out.println("ok!");
+            }
+        }
+
     }
 
     private void setClient(Context context) throws Exception {

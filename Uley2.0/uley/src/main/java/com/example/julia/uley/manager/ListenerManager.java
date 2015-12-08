@@ -22,10 +22,10 @@ public class ListenerManager {
     }
 
     public Package listenerManager() {
-        //setTempPackage();
+        setTempPackage();
         while (true) {
-            setTempPackage();
             if (tempPackage == null){
+                setTempPackage();
                 continue;
             }
             if (tempPackage.getType() == PackageType.RESP_SIGN_IN_OK) {

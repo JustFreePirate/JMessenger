@@ -24,7 +24,6 @@ public class Listener implements Runnable {
 
     //не тестили
     public Listener(SSLSocket sslSocket, ArrayDeque<Package> arrayDequeResp, ArrayDeque<Package> arrayDequeReq){
-        System.out.println("List init");
         try {
             inputStream = sslSocket.getInputStream();
 
@@ -39,7 +38,6 @@ public class Listener implements Runnable {
         thread = new Thread(this, "ListenerThread");
         thread.start();
 
-        System.out.println("List constr ok");
     }
 
     public void run() {
@@ -47,7 +45,6 @@ public class Listener implements Runnable {
     }
 
     private void listen() {
-        System.out.println("in listen()");
         try {
             byte[] buf = new byte[BUFF_LEN];
             int r = 0;
@@ -56,7 +53,6 @@ public class Listener implements Runnable {
                 try {
                     if ((r = inputStream.read(buf)) > 0) {
                         try {
-                            System.out.println("MMMMMMMMMMMMMMMMMMMMMMMMMM");
                             Package receivedPack = Package.deserialize(buf);
 
                             //не тестили
