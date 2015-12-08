@@ -44,6 +44,7 @@ public class Client {
 
         //В отдельном потоке принимаем пакеты
         new Listener(sslSocket, arrayDeque );
+        new PackageService(arrayDeque);
     }
 
     public void start() throws Exception {
@@ -65,9 +66,6 @@ public class Client {
             sender.sendPackage(aPackage);
 
         }
-
-        //never
-
     }
 
     public Package getPackage() {

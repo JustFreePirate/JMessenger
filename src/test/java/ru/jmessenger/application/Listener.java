@@ -46,9 +46,11 @@ public class Listener implements Runnable {
             String request;
 
             while (true) {
+                //System.out.println("kkk");
                 try {
                     if ((r = inputStream.read(buf)) > 0) {
                         try {
+                            //System.out.println("eee");
                             ru.jmessenger.application.common.Package receivedPack = Package.deserialize(buf);
                             //packageService.processPackage(receivedPack);
                             arrayDeque.add(receivedPack);
@@ -63,29 +65,4 @@ public class Listener implements Runnable {
             e.printStackTrace();
         }
     }
-
-//    class PackageService {
-//        Package currentPackage;
-//        SimpleDateFormat formatter;
-//
-//        PackageService() {
-//            formatter = new SimpleDateFormat("HH:mm:ss dd.MM.yyyy");
-//        }
-//
-//        //обрабатывает пришедший пакет
-//        void processPackage(Package pack) {
-//            currentPackage = pack;
-//
-//            PackageType packType = pack.getType();
-//            switch (packType) {
-//                case REQ_SEND_MESSAGE:
-//                    System.out.println("From: " + pack.getLogin() + " " + formatter.format(pack.getDate()) +
-//                            "\n" + "-> " + pack.getMessage());
-//                    break;
-//
-//                default:
-//                    System.out.println(packType.name());
-//            }
-//        }
-//    }
 }

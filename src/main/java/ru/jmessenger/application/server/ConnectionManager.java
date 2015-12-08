@@ -44,7 +44,7 @@ public class ConnectionManager extends Thread {
     }
 
     private SSLServerSocketFactory getSocketFactory() throws Exception {
-        KeyStore ks = KeyStore.getInstance("BKS");
+        KeyStore ks = KeyStore.getInstance("JKS");
         ks.load(new FileInputStream(ksName), null);
         KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
         kmf.init(ks, crtPass);
