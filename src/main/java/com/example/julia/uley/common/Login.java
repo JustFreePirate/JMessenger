@@ -1,17 +1,23 @@
-package ru.jmessenger.application.common;
+package com.example.julia.uley.common;
+
+/**
+ * Created by Julia on 23.11.2015.
+ */
 
 import java.io.Serializable;
 import java.util.Objects;
 
-/**
- * Created by dima on 17.11.15.
- */
-public class Login implements Serializable{
-    String login;
+public class Login implements Serializable {
+    private String login;
+
+    public Login() {
+        this(null);
+    }
 
     public Login(String login) {
         this.login = login;
     }
+
 
     @Override
     public String toString() {
@@ -36,4 +42,7 @@ public class Login implements Serializable{
     }
 
 
+    public String getLogin() {
+        return login;
+    }
 }

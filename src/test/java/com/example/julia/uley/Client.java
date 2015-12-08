@@ -1,18 +1,17 @@
-package ru.jmessenger.application;
+package com.example.julia.uley;
 
 import java.io.*;
-import java.net.SocketTimeoutException;
 import java.security.KeyStore;
-import java.security.Security;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
-import java.text.SimpleDateFormat;
 import java.util.ArrayDeque;
-import java.util.Arrays;
 import java.util.Scanner;
+import java.util.concurrent.ConcurrentLinkedDeque;
 
-import ru.jmessenger.application.common.*;
-import ru.jmessenger.application.common.Package;
+import com.example.julia.uley.common.Login;
+import com.example.julia.uley.common.PackageType;
+import com.example.julia.uley.common.Pass;
+import com.example.julia.uley.common.Package;
 
 import javax.net.ssl.*;
 
@@ -25,7 +24,7 @@ public class Client {
     private static final int TIMEOUT = 500;
     private static final int PORT = 3128;
 
-    private ArrayDeque<Package> arrayDeque;
+    private ConcurrentLinkedDeque<Package> arrayDeque;
 
     private Sender sender;
     private Listener listener;
@@ -39,7 +38,7 @@ public class Client {
         sslSocket = (SSLSocket) socketFactory.createSocket("172.20.15.174", PORT);
         sslSocket.setSoTimeout(TIMEOUT); //ждем ответа TIMEOUT миллисек
 
-        arrayDeque = new ArrayDeque<Package>();
+        arrayDeque = new ConcurrentLinkedDeque<>();
         sender = new Sender(sslSocket);
 
         //В отдельном потоке принимаем пакеты

@@ -1,4 +1,4 @@
-package ru.jmessenger.application.common;
+package com.example.julia.uley.common;
 
 import java.lang.Package;
 import java.lang.String;

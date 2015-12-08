@@ -1,12 +1,8 @@
-package ru.jmessenger.application;
-
-import ru.jmessenger.application.common.*;
+package com.example.julia.uley;
 
 import javax.net.ssl.SSLSocket;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.OutputStreamWriter;
 
 /**
  * Created by Сергей on 04.12.2015.
@@ -22,7 +18,7 @@ public class Sender {
         }
     }
 
-    public void sendPackage(ru.jmessenger.application.common.Package aPackage) throws IOException {
+    public void sendPackage(com.example.julia.uley.common.Package aPackage) throws IOException {
         byte[] serialized = aPackage.serialize();
         System.out.println("length of package: " + serialized.length);
         outputStream.write(serialized, 0, serialized.length);

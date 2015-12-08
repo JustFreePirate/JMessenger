@@ -1,6 +1,4 @@
-package ru.jmessenger.application.listeners;
-
-import ru.jmessenger.application.server.ConnectionManager;
+package com.example.julia.uley.listeners;
 
 /**
  * Created by Дмитрий on 19.10.2015.

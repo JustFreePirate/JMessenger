@@ -1,14 +1,11 @@
-package ru.jmessenger.application;
+package com.example.julia.uley;
 
-import ru.jmessenger.application.common.*;
-import ru.jmessenger.application.common.Package;
+import com.example.julia.uley.common.PackageType;
+import com.example.julia.uley.common.Package;
 
-import javax.net.ssl.SSLSocket;
-import java.io.InputStream;
-import java.net.SocketTimeoutException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayDeque;
-import java.net.*;
+import java.util.concurrent.ConcurrentLinkedDeque;
 
 /**
  * Created by Сергей on 07.12.2015.
@@ -17,10 +14,11 @@ import java.net.*;
  */
 public class PackageService implements Runnable {
     private Thread thread;
-    private ArrayDeque<Package> arrayDeque;
+//    private ArrayDeque<Package> arrayDeque;
+    private ConcurrentLinkedDeque<Package> arrayDeque;
     SimpleDateFormat formatter;
 
-    public PackageService(ArrayDeque<Package> arrayDeque){
+    public PackageService(ConcurrentLinkedDeque<Package> arrayDeque){
         formatter = new SimpleDateFormat("HH:mm:ss dd.MM.yyyy");
 
         this.arrayDeque = arrayDeque;
@@ -45,7 +43,6 @@ public class PackageService implements Runnable {
         while (true) {
 
             Package pack = getPackage();
-
             if (pack == null) continue;
 
             PackageType packType = pack.getType();

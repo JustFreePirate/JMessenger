@@ -1,6 +1,6 @@
-package ru.jmessenger.application.common;
+package com.example.julia.uley.common;
 
-import ru.jmessenger.application.server.ConnectionManager;
+import com.example.julia.uley.server.ConnectionManager;
 
 import java.io.*;
 import java.util.Date;
@@ -11,11 +11,11 @@ import java.util.Date;
 public class Package implements Serializable {
     public static final int BUFF_LEN = ConnectionManager.BUFF_LEN;
 
-    private Login login;
     private Date date;
+    private Pass pass;
+    private Login login;
     private String message;
     private byte[] file;
-    private Pass pass;
     private Login[] searchAnswer;
     private PackageType type;
 
