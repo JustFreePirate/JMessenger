@@ -36,7 +36,7 @@ public class Client {
     public Client() throws Exception {
 
         socketFactory = getSocketFactory();
-        sslSocket = (SSLSocket) socketFactory.createSocket("localhost", PORT);
+        sslSocket = (SSLSocket) socketFactory.createSocket("172.20.15.174", PORT);
         sslSocket.setSoTimeout(TIMEOUT); //ждем ответа TIMEOUT миллисек
 
         arrayDeque = new ArrayDeque<Package>();
