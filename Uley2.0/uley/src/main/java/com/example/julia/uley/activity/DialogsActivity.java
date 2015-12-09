@@ -20,6 +20,7 @@ import com.example.julia.uley.common.Dialog;
 import com.example.julia.uley.common.Login;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -36,6 +37,7 @@ public class DialogsActivity extends AppCompatActivity {
     private Set<String> lastMessageList;
     private Client client;
 
+
     ArrayList<Dialog> dialogs = new ArrayList<Dialog>();
     DialogsAdapter dialogAdapter;
 
@@ -44,19 +46,14 @@ public class DialogsActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.dialogs_activity);
-        try {
-            client = (Client) getIntent().getSerializableExtra("client");
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
         mSettingsLogin = getSharedPreferences(APP_PREFERENCES_LOGIN, Context.MODE_PRIVATE);
         mSettingsLastMess = getSharedPreferences(APP_PREFERENCES_LASTMESSAGE, Context.MODE_PRIVATE);
 
-
+        client = Client.getInstance();
         // создаем адаптер
         fillData();
         dialogAdapter = new DialogsAdapter(this, dialogs);
-
+        System.out.println("dialog size: " + dialogs.size());
         // настраиваем список
         ListView dialogsListView = (ListView) findViewById(R.id.roomsList);
         dialogsListView.setAdapter(dialogAdapter);
@@ -65,43 +62,99 @@ public class DialogsActivity extends AppCompatActivity {
                                     int position, long id) {
                 Intent intent = new Intent(DialogsActivity.this, ChatActivity.class);
                 //TODO: MUST BE REPLACE, second parameter
-                intent.putExtra("key", position);
-                intent.putExtra("client", client);
+                intent.putExtra("senderLogin", dialogs.get(position).getLogin().toString());
                 startActivity(intent);
             }
         });
-
         onPause();
+    }
+
+
+    @Override
+    public void onBackPressed() {
     }
 
     // генерируем данные для адаптера
     private void fillData() {
         onResume();
-        String[] tempFriendList = new String[friendList.size()];
-        String[] tempLastMessList = new String[lastMessageList.size()];
-        friendList.toArray(tempFriendList);
-        lastMessageList.toArray(tempLastMessList);
-        if (friendList.isEmpty()) {
-            dialogs = new ArrayList<>();
-        } else {
-            for (int i = 0; i < friendList.size(); i++) {
-                Login tempLogin = new Login(tempFriendList[i]);
-                Dialog tempDialog = new Dialog(tempLogin, tempLastMessList[i]);
-                dialogs.add(i, tempDialog);
+        try {
+            if (!getIntent().getExtras().getString("SearcherUser").equals(null)) {
+                System.out.println("in if search user");
+                if (sizeFriendList() == 0 && sizeLastMessageList() == 0) {
+                    String[] tempFriendList = new String[1];
+                    String[] tempLastMessList = new String[1];
+                    friendList = new HashSet<>();
+                    friendList.add(getIntent().getExtras().getString("SearcherUser"));
+                    lastMessageList = new HashSet<>();
+                    lastMessageList.add("");
+                    System.out.println(getIntent().getExtras().getString("SearcherUser"));
+                    tempFriendList[0] = getIntent().getExtras().getString("SearcherUser");
+                    tempLastMessList[0] = "";
+                    Login tempLogin = new Login(tempFriendList[0]);
+                    Dialog tempDialog = new Dialog(tempLogin, tempLastMessList[0]);
+                    dialogs.add(0, tempDialog);
+                } else {
+                    try {
+                        System.out.println("in else search user");
+                        String[] tempFriendList = new String[sizeFriendList() + 1];
+                        String[] tempLastMessList = new String[sizeLastMessageList() + 1];
+                        friendList.add(getIntent().getExtras().getString("SearcherUser"));
+                        lastMessageList.add("");
+                        friendList.toArray(tempFriendList);
+                        lastMessageList.toArray(tempLastMessList);
+                        for (int i = 0; i < friendList.size(); i++) {
+                            System.out.println(tempLastMessList.length);
+                            Login tempLogin = new Login(tempFriendList[i]);
+                            Dialog tempDialog = new Dialog(tempLogin, tempLastMessList[i]);
+                            dialogs.add(i, tempDialog);
+                        }
+
+                    } catch (Exception e) {
+                        e.getStackTrace();
+                    }
+                }
             }
+        } catch (Exception e) {
+
+            if (sizeLastMessageList() != 0 && sizeFriendList() != 0) {
+                System.out.println("in if exception");
+                String[] tempFriendList = new String[sizeFriendList()];
+                String[] tempLastMessList = new String[sizeLastMessageList()];
+                friendList.toArray(tempFriendList);
+                lastMessageList.toArray(tempLastMessList);
+                if (friendList.isEmpty()) {
+                    dialogs = new ArrayList<>();
+                } else {
+                    for (int i = 0; i < friendList.size(); i++) {
+                        Login tempLogin = new Login(tempFriendList[i]);
+                        Dialog tempDialog = new Dialog(tempLogin, tempLastMessList[i]);
+                        dialogs.add(i, tempDialog);
+                    }
+                }
+            } else {
+                System.out.println("in else exception");
+                friendList = new HashSet<>();
+                lastMessageList = new HashSet<>();
+                dialogs = new ArrayList<>();
+            }
+        }
+        onPause();
+    }
+
+    private Integer sizeFriendList() {
+        try {
+            return friendList.size();
+        } catch (NullPointerException e) {
+            return 0;
         }
     }
 
-    @Override
-    protected void onPause() {
-        super.onPause();
-        // Запоминаем данные
-        SharedPreferences.Editor editorLogin = mSettingsLogin.edit();
-        SharedPreferences.Editor editorLastMess = mSettingsLastMess.edit();
-        editorLogin.putStringSet(APP_PREFERENCES_COUNTER_LOGIN, friendList);
-        editorLastMess.putStringSet(APP_PREFERENCES_COUNTER_LASTMESSAGE, lastMessageList);
-        editorLogin.apply();
-        editorLastMess.apply();
+    private Integer sizeLastMessageList() {
+        try {
+            return lastMessageList.size();
+        } catch (NullPointerException e) {
+            return 0;
+        }
     }
 
     @Override
@@ -117,10 +170,24 @@ public class DialogsActivity extends AppCompatActivity {
         }
     }
 
+    @Override
+    protected void onPause() {
+        super.onPause();
+        // Запоминаем данные
+        SharedPreferences.Editor editorLogin = mSettingsLogin.edit();
+        SharedPreferences.Editor editorLastMess = mSettingsLastMess.edit();
+        editorLogin.putStringSet(APP_PREFERENCES_COUNTER_LOGIN, friendList);
+        editorLastMess.putStringSet(APP_PREFERENCES_COUNTER_LASTMESSAGE, lastMessageList);
+        editorLogin.apply();
+        editorLastMess.apply();
+    }
+
+
     public void ConfirmSignOut() {
         DialogFragment newFragment = new SignOutDialogFragment();
         newFragment.show(getSupportFragmentManager(), "missiles");
     }
+
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {

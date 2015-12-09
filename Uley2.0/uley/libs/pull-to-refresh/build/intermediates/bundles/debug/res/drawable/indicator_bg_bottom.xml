@@ -15,4 +15,4 @@
         android:topLeftRadius="@dimen/indicator_corner_radius"
         android:topRightRadius="@dimen/indicator_corner_radius" />
 
-</shape><!-- From: file:/C:/Android/Uley%202.0/uley/libs/pull-to-refresh/res/drawable/indicator_bg_bottom.xml -->
+</shape><!-- From: file:/C:/Android/Uley2.0/uley/libs/pull-to-refresh/res/drawable/indicator_bg_bottom.xml -->

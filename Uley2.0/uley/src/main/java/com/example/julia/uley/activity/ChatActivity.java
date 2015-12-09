@@ -17,10 +17,13 @@ import com.example.julia.uley.client.Client;
 import com.example.julia.uley.common.Login;
 import com.example.julia.uley.common.Package;
 import com.example.julia.uley.common.PackageType;
-import com.example.julia.uley.common.Pass;
 import com.example.julia.uley.manager.ListenerManager;
+import com.example.julia.uley.manager.ListenerREQManager;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 public class ChatActivity extends AppCompatActivity {
@@ -29,16 +32,19 @@ public class ChatActivity extends AppCompatActivity {
     public static final String APP_PREFERENCES_POSTHISTORY = "MessSettings";
     public static final String APP_PREFERENCES_COUNTER_POSTHISTORY = "MessCounter";
     private static Context context;
+    private Button sendMessageButton;
     private SharedPreferences mSettingsLogin;
     private SharedPreferences mSettingsHistory;
     private Set<String> friedList;
     private Set<String> postHistoryList;
-    ArrayList<String> chat = new ArrayList<>();
+    private ListView chatListView;
+    private ArrayList<String> chat = new ArrayList<>();
     ChatAdapter chatAdapter;
-    //Login login = new Login(getIntent().getExtras().getString("key"));
-    Login login = new Login("Bob");
+    private Login login;
+    //Login login = new Login("S");
     private EditText messange;
     private Client client;
+    private Map<Login, ArrayList<String>> trash = new HashMap<>();
 
     public static Context getContext() {
         return context;
@@ -48,12 +54,8 @@ public class ChatActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.chat_activity);
+        login = new Login(getIntent().getExtras().getString("senderLogin"));
 
-        try {
-            client = (Client) getIntent().getSerializableExtra("client");
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
         mSettingsLogin = getSharedPreferences(APP_PREFERENCES_LOGIN, Context.MODE_PRIVATE);
         mSettingsHistory = getSharedPreferences(APP_PREFERENCES_POSTHISTORY, Context.MODE_PRIVATE);
         //ProgressBar progressBar = (ProgressBar) findViewById(R.id.progressBar);
@@ -65,22 +67,24 @@ public class ChatActivity extends AppCompatActivity {
         chatAdapter = new ChatAdapter(this, chat);
 
         // настраиваем список
-        final ListView chatListView = (ListView) findViewById(R.id.messagesContainer);
+        chatListView = (ListView) findViewById(R.id.messagesContainer);
         ((TextView) findViewById(R.id.companionLabel)).setText(login.toString());
         chatListView.setAdapter(chatAdapter);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
+        final ListenTask listenTask = new ListenTask();
+        listenTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
 
         messange = (EditText) findViewById(R.id.messageEdit);
-        Button sendMessageButton = (Button) findViewById(R.id.chatSendButton);
+        sendMessageButton = (Button) findViewById(R.id.chatSendButton);
         sendMessageButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 String tempString = messange.getText().toString();
-                Package aPackage = new Package(tempString, new Login("T"));
+                Package aPackage = new Package(tempString, login);
 //                Package loginInPackage = new Package(PackageType.REQ_SIGN_IN, new Login("M"), new Pass("123"));
                 sendTask sendTask = new sendTask();
-                sendTask.execute(aPackage);
+                sendTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, aPackage);
             }
         });
 
@@ -127,76 +131,84 @@ public class ChatActivity extends AppCompatActivity {
 
     // генерируем данные для адаптера
     private void fillData() {
-//        onResume();
-//        String[] tempFriendList = new String[friedList.size()];
-//        String[] tempLastMessList = new String[postHistoryList.size()]; //Нужно придумать как сохранить коллекцию массивов
-//        friedList.toArray(tempFriendList);
-//        postHistoryList.toArray(tempLastMessList);
-//        if (friedList.isEmpty()) {
-//            chat = new ArrayList<>();
-//        } else {
-//            if (search(tempFriendList, login.toString()) != -1) {
-//                //Получить
-//            } else {
-//
-//            }
-//        }
-        ArrayList<String> temp = new ArrayList<>();
-        for (int i = 0; i < 20; i++) {
-            temp.add(i, "kek");
+        onResume();
+        try {
+            String[] tempFriendList = new String[friedList.size()];
+            String[] tempLastMessList = new String[postHistoryList.size()]; //Нужно придумать как сохранить коллекцию массивов
+            friedList.toArray(tempFriendList);
+            postHistoryList.toArray(tempLastMessList);
+            if (friedList.isEmpty()) {
+                chat = new ArrayList<>();
+            } else {
+                if (search(tempFriendList, login.toString()) != -1) {
+                    chat.add(tempFriendList[search(tempFriendList, login.toString())]);
+                } else {
+                    chat = new ArrayList<>();
+                }
+            }
+        } catch (Exception e) {
+            friedList = new HashSet<>();
+            postHistoryList = new HashSet<>();
+            chat = new ArrayList<>();
         }
-        chat = temp;
+        onPause();
+    }
+
+    private class ListenTask extends AsyncTask<Void, Package, Package> {
+
+        @Override
+        protected void onProgressUpdate(Package... params) {
+            super.onProgressUpdate(params);
+            chat.add(params[0].getMessage().toString());
+            chatAdapter = new ChatAdapter(ChatActivity.this, chat);
+            ((TextView) findViewById(R.id.messageEdit)).setText("");
+            chatListView.setAdapter(chatAdapter);
+        }
+
+        @Override
+        protected Package doInBackground(Void... params) {
+            client = Client.getInstance();
+            Package tempPackage;
+            ArrayList<String> tempList = new ArrayList<>();
+            ListenerREQManager listenerREQManager = new ListenerREQManager(client);
+            while (true) {
+                tempPackage = listenerREQManager.listen();
+                System.out.println(tempPackage.getType().toString());
+                System.out.println(tempPackage.getLogin().toString());
+                if (!tempPackage.getLogin().equals(login)) {
+                    tempList.add(tempPackage.getMessage().toString());
+                    trash.put(tempPackage.getLogin(), tempList);
+                }
+                if (tempPackage.getLogin().equals(login)) {
+                    publishProgress(tempPackage);
+                }
+            }
+        }
     }
 
     private class sendTask extends AsyncTask<Package, Void, Package> {
 
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            sendMessageButton.setVisibility(View.INVISIBLE);
+        }
+
 
         @Override
         protected Package doInBackground(Package... params) {
-//            TODO: Send message ...
-//            Client client = new Client(ChatActivity.this);
-//            String temp = messange.toString();
-//            Package aPackage = new Package(temp, new Login("T"));
-//
-//            Package loginPackage = new Package(PackageType.REQ_SIGN_IN,new Login("M"),new Pass("123"));
-//            client.send(loginPackage);
             Package tempPackage = null;
+            client = Client.getInstance();
             for (Package param : params) {
                 try {
-                    client = new Client(ChatActivity.this);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-                try {
-                    Package loginPackage = new Package(PackageType.REQ_SIGN_IN, new Login("M"), new Pass("123"));
-                    client.send(loginPackage);
-
                     client.send(param);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-                System.out.println("start listening");
                 ListenerManager listenerManager = new ListenerManager(client);
-                //TODO: Mby new thread (NO)
                 tempPackage = listenerManager.listenerManager();
-//                while (true) {
-//                    System.out.println("repeated");
-//                    tempPackage = listenerManager.listenerManager();
-//                    if (tempPackage == null) {
-//                        continue;
-//                    }
-//                    if (tempPackage.getType() == PackageType.RESP_MESSAGE_IN_QUEUE) {
-//                        return tempPackage;
-//                    }
-//
-//                    if (tempPackage.getType() == PackageType.RESP_MESSAGE_DELIVERED) {
-//                        return tempPackage;
-//                    }
-//
-//                    if (tempPackage.getType() == PackageType.RESP_MESSAGE_USER_NOT_FOUND) {
-//                        return null;
-//                    }
-//                }
+                System.out.println(tempPackage.getType().toString());
+
             }
             return tempPackage;
         }
@@ -204,8 +216,16 @@ public class ChatActivity extends AppCompatActivity {
         @Override
         protected void onPostExecute(Package result) {
             super.onPostExecute(result);
-            //TODO: Need post message on screen
-            System.out.println(result.getType() + "  KEK");
+            if (result.getType() == PackageType.RESP_MESSAGE_IN_QUEUE ||
+                    result.getType() == PackageType.RESP_MESSAGE_DELIVERED) {
+                //TODO: Need post message on screen
+                sendMessageButton.setVisibility(View.VISIBLE);
+                chat.add(messange.getText().toString());
+                chatAdapter = new ChatAdapter(ChatActivity.this, chat);
+                ((TextView) findViewById(R.id.messageEdit)).setText("");
+                chatListView.setAdapter(chatAdapter);
+            }
+
         }
     }
 

@@ -31,12 +31,20 @@ public class NewSignInActivity extends AppCompatActivity {
     private static Context context;
     private View mProgressView;
     private Client client;
+    private Button SignInButton;
     private View mLoginFormView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        context = getApplicationContext();
+//        try {
+//            client = Client.deserialize(getIntent().getByteArrayExtra("client"));
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
+//        if(client == null){
+//            System.out.println("null");
+//        }
         setContentView(R.layout.activity_sign_in);
         // Set up the login form.
         mEmailView = (AutoCompleteTextView) findViewById(R.id.email);
@@ -44,14 +52,14 @@ public class NewSignInActivity extends AppCompatActivity {
 
         mPasswordView = (EditText) findViewById(R.id.password);
 
-        Button mEmailSignInButton = (Button) findViewById(R.id.email_sign_in_button);
-        mEmailSignInButton.setOnClickListener(new View.OnClickListener() {
+        SignInButton = (Button) findViewById(R.id.email_sign_in_button);
+        SignInButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 //TODO: Trying send Package to server
                 try {
                     String email = mEmailView.getText().toString();
-                    email = email.trim();
+                    //email = email.trim();
                     String password = mPasswordView.getText().toString();
                     Package signInPackage = new Package(PackageType.REQ_SIGN_IN, new Login(email), new Pass(password));
                     SignInTask signInTask = new SignInTask();
@@ -75,20 +83,24 @@ public class NewSignInActivity extends AppCompatActivity {
         });
     }
 
+
     private class SignInTask extends AsyncTask<Package, Void, Package>{
 
         @Override
+        protected void onPreExecute(){
+            super.onPreExecute();
+            SignInButton.setVisibility(View.INVISIBLE);
+        }
+
+        @Override
         protected Package doInBackground(Package... params) {
-            try {
-                client = new Client(context);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+            client = Client.getInstance();
             try {
                 client.send(params[0]);
             } catch (Exception e) {
                 e.printStackTrace();
             }
+
             ListenerManager listenerManager = new ListenerManager(client);
             Package tempPackage = listenerManager.listenerManager();
             return tempPackage;
@@ -99,23 +111,19 @@ public class NewSignInActivity extends AppCompatActivity {
             Package tempPackage = result;
             if (tempPackage.getType() == PackageType.RESP_SIGN_IN_FAILED) {
                 Toast.makeText(getBaseContext(), "Sign in failed", Toast.LENGTH_LONG).show();
-                System.out.println("Sign in failed");
+                SignInButton.setVisibility(View.VISIBLE);
             }
             if (tempPackage.getType() == PackageType.RESP_SIGN_IN_OK) {
                 Intent intent = new Intent(NewSignInActivity.this, DialogsActivity.class);
-                intent.putExtra("client", client);
-                //startActivity(intent);
+                SignInButton.setVisibility(View.VISIBLE);
                 System.out.println("ok!");
+                startActivity(intent);
+                //System.out.println("ok!");
             }
         }
 
     }
 
-    private void setClient(Context context) throws Exception {
-        if (client == null) {
-            client = new Client(context);
-        }
-    }
 
 
 //    private void populateAutoComplete() {

@@ -19,4 +19,4 @@
     android:duration="@android:integer/config_longAnimTime"
     android:fromYDelta="0"
     android:toYDelta="100%p" />
-<!-- From: file:/C:/Android/Uley%202.0/uley/libs/pull-to-refresh/res/anim/slide_out_to_bottom.xml --><!-- From: file:/C:/Android/Uley%202.0/uley/libs/pull-to-refresh/build/intermediates/bundles/debug/res/anim/slide_out_to_bottom.xml -->
+<!-- From: file:/C:/Android/Uley2.0/uley/libs/pull-to-refresh/res/anim/slide_out_to_bottom.xml --><!-- From: file:/C:/Android/Uley2.0/uley/libs/pull-to-refresh/build/intermediates/bundles/debug/res/anim/slide_out_to_bottom.xml -->
